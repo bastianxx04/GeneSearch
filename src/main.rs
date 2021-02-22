@@ -29,7 +29,7 @@ fn pretty_print_bwt_rank(bwt_ordered: &[(usize, Vec<usize>)], input_array: &[cha
         let num = *num_ref;
         print!("\n  ");
         if num == 0 {
-            print!("{}  {}  ", input_array[0], '$');
+            print!("{}  $  ", input_array[0]);
         } else {
             print!("{}  {}  ", input_array[num], input_array[num - 1]);
         }
@@ -55,7 +55,7 @@ fn rank_table_gen(suffix_array: &[usize], input_array: &[char]) -> Vec<(usize, V
         old_rank_table = new_rank_table.clone();
         new_bwt_output.push((suffix_array[i], new_rank_table.clone()))
     }
-    return new_bwt_output;
+    new_bwt_output
 }
 
 //TODO: MAKE 'QUERY' FUNCTION (FROM X IN F TO Y IN L)
