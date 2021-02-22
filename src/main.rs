@@ -13,16 +13,16 @@ fn main() {
     input_array.push('$');
 
     //Make the Data Array   [Suffix], num, [Rank Table]
-    let suffix_array: Vec<usize> = construct_suffix_array_naive(&input_array);
+    let suffix_array = construct_suffix_array_naive(&input_array);
     
     //pretty_print_bwt(&all_suffixes_ordered);
 
-    let bwt_ordered: Vec<(usize, Vec<usize>)> = rank_table_gen(&suffix_array, &input_array);
+    let bwt_ordered = rank_table_gen(&suffix_array, &input_array);
 
     pretty_print_bwt_rank(&bwt_ordered, &input_array);
 }
 
-fn pretty_print_bwt_rank(bwt_ordered: &Vec<(usize, Vec<usize>)>, input_array: &Vec<char>) {
+fn pretty_print_bwt_rank(bwt_ordered: &[(usize, Vec<usize>)], input_array: &[char]) {
     print!("\n\nF & L - SORTED");
     print!("\n  F  L    num     A C G T");
     for (num_ref, rank) in bwt_ordered {
@@ -38,29 +38,12 @@ fn pretty_print_bwt_rank(bwt_ordered: &Vec<(usize, Vec<usize>)>, input_array: &V
     }
 }
 
-fn suff_gen(input_array: &Vec<char>) -> Vec<(Vec<char>, usize, Vec<usize>)>{
-    let mut temp_data_table: Vec<(Vec<char>, usize, Vec<usize>)> = Vec::new();
-    for i in 0..(input_array.len()) {
-        let mut to_be_inserted = input_array.clone();
-        let rank_table = Vec::new();
-
-        if temp_data_table.len() > 0{
-            to_be_inserted = temp_data_table.last().unwrap().0.to_vec();
-            let first_elem = to_be_inserted[0];
-            to_be_inserted.remove(0);
-            to_be_inserted.push(first_elem);
-        }
-        temp_data_table.push((to_be_inserted, i, rank_table));
-    }
-    return temp_data_table;
-}
-
-fn rank_table_gen(suffix_array: &Vec<usize>, input_array: &Vec<char>) -> Vec<(usize, Vec<usize>)>{
+fn rank_table_gen(suffix_array: &[usize], input_array: &[char]) -> Vec<(usize, Vec<usize>)>{
     //ORDER: A, C, G, T
-    let mut old_rank_table: Vec<usize> = vec![0,0,0,0];
-    let mut new_bwt_output: Vec<(usize, Vec<usize>)> = Vec::new();
-    for i in 0..(suffix_array.len()) {
-        let mut new_rank_table: Vec<usize> = old_rank_table.clone();
+    let mut old_rank_table = vec![0,0,0,0];
+    let mut new_bwt_output = Vec::new();
+    for i in 0..suffix_array.len() {
+        let mut new_rank_table = old_rank_table.clone();
         match input_array[suffix_array[i]] {
             'a' => new_rank_table[0] += 1,
             'c' => new_rank_table[1] += 1,
