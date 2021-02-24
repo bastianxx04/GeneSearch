@@ -1,8 +1,9 @@
 mod suffix_array_construction;
-//mod exact_search;
+mod exact_search;
 //mod approx_search;
 
 use suffix_array_construction::construct_suffix_array_naive;
+use exact_search::exact_search;
 
 fn main() {
     //OUR CURRENT ALPHABET IS A, C, G, T
@@ -20,6 +21,8 @@ fn main() {
     let bwt_ordered = rank_table_gen(&suffix_array, &input_array);
 
     pretty_print_bwt_rank(&bwt_ordered, &input_array);
+
+    let seach_result = exact_search(&suffix_array, &input_array, &bwt_ordered);
 }
 
 fn pretty_print_bwt_rank(bwt_ordered: &[(usize, Vec<usize>)], input_array: &[char]) {
