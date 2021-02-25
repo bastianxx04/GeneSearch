@@ -1,9 +1,12 @@
+use crate::suffix_array::SuffixArray;
+
 /// Construct a suffix array
 trait SuffixArrayConstructor {
-    fn construct_suffix_array(input_string: &[char]) -> Vec<usize>;
+
+    fn construct_suffix_array(input_string: &[char]) -> SuffixArray;
 }
 
-pub fn construct_suffix_array_naive(input_array: &[char]) -> Vec<usize> {
+pub fn construct_suffix_array_naive(input_array: &Vec<char>) -> SuffixArray {
     let mut temp_data_table: Vec<(Vec<char>, usize)> = Vec::new();
     for i in 0..(input_array.len()) {
         let mut to_be_inserted = input_array.to_owned();
@@ -17,8 +20,13 @@ pub fn construct_suffix_array_naive(input_array: &[char]) -> Vec<usize> {
 
     temp_data_table.sort();
 
-    temp_data_table
+    let array = temp_data_table
         .iter()
         .map(|elem| elem.1)
-        .collect()
+        .collect();
+
+    SuffixArray {
+        array,
+        string: input_array,
+    }
 }
