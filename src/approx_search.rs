@@ -27,7 +27,7 @@ fn calculate_d_table(input_word: &[u8], search_word: &[u8], c_table: &CTable, o_
         println!("i_char: {}", i_char_num);
         println!("start: {} - end: {} - i: {}", start, end, i);
         println!("c: {} o: {}", c_table[i_char_num], o_table[end][i_char_num]);
-        start = c_table[i_char_num] + o_table[start - 1][i_char_num] + 1;
+        start = c_table[i_char_num] + o_table[start - 1][i_char_num];
         end = c_table[i_char_num] + o_table[end][i_char_num]-1;
         if start > end {
             println!("  start was bigger than end");
