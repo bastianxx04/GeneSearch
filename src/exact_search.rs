@@ -1,4 +1,4 @@
-use crate::suffix_array::SuffixArray;
+use crate::types::SuffixArray;
 use std::cmp::{Ordering, min};
 use crate::ALPHABET;
 
@@ -30,7 +30,7 @@ pub fn exact_search(query: &[char], o_table: &Vec<Vec<usize>>, c_table: &[usize]
 }
 
 /// Exact search based on binary search through the suffix array
-pub fn naive_exact_search(suffix_array: &SuffixArray, query: &[char]) -> usize {
+pub fn naive_exact_search(suffix_array: &SuffixArray, query: &[u8]) -> usize {
     let mut low = 0;
     let mut high = suffix_array.array.len();
 
