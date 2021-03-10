@@ -15,7 +15,7 @@ use util::*;
 const ALPHABET: [char; 5] = ['$', 'a', 'c', 'g', 't'];
 
 fn main() {
-    let genome = "aggagc$";
+    let genome = "agatagattcaca$";
     println!("\t=== INPUT IS \"{}\" ===", genome);
     let mut genome_vec = string_to_ints(genome);
 
@@ -38,7 +38,7 @@ fn main() {
         println!("Searched for {:?}, with naïve, found at {:?}", search_string_ints, suffix_array.array[search_result]+1);
     }
 
-    let search_string = vec!['a', 'g', 'a'];
+    let search_string = vec!['c', 'c', 'c'];
     let search_result = exact_search( &search_string, &o_table, &c_table);
     println!("Searched for {:?}, with bwt-search, found at {:?}", search_string , search_result);
 
