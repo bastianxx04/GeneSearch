@@ -15,7 +15,7 @@ pub fn exact_search(query: &[char], o_table: &Vec<Vec<usize>>, c_table: &[usize]
     let mut start = c_table[last_char_num];
     let mut end = c_table[(last_char_num + 1) % ALPHABET.len()]-1;
 
-    for c in query[1..].iter() {
+    for c in query[..query.len()-1].iter().rev() {
         let char_num = ALPHABET.iter()
             .position(|&r| r == *c)
             .expect("Query char wasn't in alphabet");

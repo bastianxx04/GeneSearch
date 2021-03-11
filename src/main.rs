@@ -38,18 +38,19 @@ fn main() {
         println!("Searched for {:?}, with naïve, found at {:?}", search_string_ints, suffix_array.array[search_result]+1);
     }
 
-    let search_string = vec!['c', 'c', 'c'];
+    println!("{:?}", genome_vec);
+    let search_string = vec!['t', 'a', 'g'];
     let search_result = exact_search( &search_string, &o_table, &c_table);
     println!("Searched for {:?}, with bwt-search, found at {:?}", search_string , search_result);
 
     //approx search
-    genome_vec.reverse();
-    let reverse_suffix_array = construct_suffix_array_naive(&genome_vec);
-    let reverse_o_table = generate_o_table(&reverse_suffix_array);
-    print_o_table(&reverse_o_table, &genome_vec, &reverse_suffix_array.array);
-    println!("c table: {:?}", c_table);
-    approx_search(&genome_vec, &search_string_ints, &reverse_o_table, &c_table, 1);
-    genome_vec.reverse();
+    // genome_vec.reverse();
+    // let reverse_suffix_array = construct_suffix_array_naive(&genome_vec);
+    // let reverse_o_table = generate_o_table(&reverse_suffix_array);
+    // print_o_table(&reverse_o_table, &genome_vec, &reverse_suffix_array.array);
+    // println!("c table: {:?}", c_table);
+    // approx_search(&genome_vec, &search_string_ints, &reverse_o_table, &c_table, 1);
+    // genome_vec.reverse();
 
 }
 
