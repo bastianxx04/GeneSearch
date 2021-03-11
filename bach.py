@@ -114,15 +114,16 @@ def calculate_d(W, bwt, O, C):
 
 
 def inex_recur(C, O, D, A, W, i, edits_left, L, R):
-    print(f"entered recur with level {i}")
+    print(f"entered recur with level {i} and {D[-1]}")
     
     lower_limit = D[i]
 
     if edits_left < lower_limit:
-        print(f"edits_left is less than lower_limit")
+        print(f"    returned nothing")
         return set()
 
     if i < 0:
+        print(f"    returned something")
         return {(L, R)}
     
     I = set()
@@ -153,7 +154,7 @@ def run(string, alphabet):
     print(c_table)
     d_table = calculate_d(search_word, bwt, o_table, c_table)
     print(d_table)
-    result = inex_recur(c_table, o_table, d_table, alphabet, search_word, len(search_word)-1, 1, 1, len(string_googol_rev)-1)
+    result = inex_recur(c_table, o_table, d_table, alphabet, search_word, len(search_word)-1, 1, 1, len(string)-1)
     print(result)
 
 

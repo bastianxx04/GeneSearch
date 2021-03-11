@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct SuffixArray<'a> {
     pub string: &'a Vec<u8>,
     pub array: Vec<usize>,

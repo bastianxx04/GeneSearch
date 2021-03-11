@@ -1,6 +1,4 @@
-use crate::types::OTable;
-use crate::{ALPHABET};
-use crate::table_gen::prev_elem;
+use crate::{ALPHABET, table_gen::prev_elem};
 
 pub fn print_o_table(o: &Vec<Vec<usize>>, s: &Vec<u8>, sa: &Vec<usize>) {
     println!("O-table:");

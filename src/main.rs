@@ -6,8 +6,8 @@ mod table_gen;
 mod util;
 
 use suffix_array_construction::construct_suffix_array_naive;
-use exact_search::{naive_exact_search, exact_search};
-use approx_search::approx_search;
+use exact_search::{naive_exact_search, backwards_search_with_bwt};
+use approx_search::{approx_search, ApproxSearchParams};
 use types::*;
 use table_gen::{generate_c_table, generate_o_table};
 use util::*;
@@ -17,13 +17,14 @@ const ALPHABET: [char; 5] = ['$', 'a', 'c', 'g', 't'];
 fn main() {
     let genome = "agatagattcaca$";
     println!("\t=== INPUT IS \"{}\" ===", genome);
-    let mut genome_vec = string_to_ints(genome);
+    let genome = string_to_ints(genome);
 
     // Initialize suffix array, O-table, and C-table
-    let suffix_array = construct_suffix_array_naive(&genome_vec);
+    let suffix_array = construct_suffix_array_naive(&genome);
+    println!("Suffix array: {:?}", suffix_array);
 
     let o_table = generate_o_table(&suffix_array);
-    print_o_table(&o_table, &genome_vec, &suffix_array.array);
+    print_o_table(&o_table, &genome, &suffix_array.array);
     let c_table = generate_c_table(&suffix_array);
     println!("C-table:\n{:?}", c_table);
 
@@ -37,21 +38,29 @@ fn main() {
     } else {   
         println!("Searched for {:?}, with naïve, found at {:?}", search_string_ints, suffix_array.array[search_result]+1);
     }
-
-    println!("{:?}", genome_vec);
-    let search_string = vec!['t', 'a', 'g'];
-    let search_result = exact_search( &search_string, &o_table, &c_table);
+    
+    println!("{:?}", genome);
+    let search_string = string_to_ints("att");
+    let search_result = backwards_search_with_bwt( &search_string, &o_table, &c_table);
     println!("Searched for {:?}, with bwt-search, found at {:?}", search_string , search_result);
-
+    
     //approx search
-    // genome_vec.reverse();
-    // let reverse_suffix_array = construct_suffix_array_naive(&genome_vec);
-    // let reverse_o_table = generate_o_table(&reverse_suffix_array);
-    // print_o_table(&reverse_o_table, &genome_vec, &reverse_suffix_array.array);
-    // println!("c table: {:?}", c_table);
-    // approx_search(&genome_vec, &search_string_ints, &reverse_o_table, &c_table, 1);
-    // genome_vec.reverse();
-
+    let mut reverse_genome = genome.clone();
+    reverse_genome.reverse();
+    let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
+    let reverse_o_table = generate_o_table(&reverse_suffix_array);
+    print_o_table(&reverse_o_table, &reverse_genome, &reverse_suffix_array.array);
+    println!("c table: {:?}", c_table);
+    
+    let params = ApproxSearchParams {
+        ref_string: &genome,
+        search_string: &string_to_ints("att"),
+        o_table: &o_table,
+        c_table: &c_table,
+        o_table_rev: &reverse_o_table,
+        edits_left: 1,
+    };
+    println!("{:?}",approx_search(params));
 }
 
 fn string_to_ints(s: &str) -> Vec<u8> {
