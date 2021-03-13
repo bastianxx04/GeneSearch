@@ -1,9 +1,10 @@
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 use crate::ALPHABET;
 use crate::OTable;
 use crate::CTable;
 use crate::DTable;
 use std::convert::TryFrom;
+use crate::util::bwt;
 
 pub struct ApproxSearchParams<'a> {
     pub ref_string: &'a [u8],
@@ -15,21 +16,31 @@ pub struct ApproxSearchParams<'a> {
 }
 
 /// Approximative search
-pub fn approx_search(params: ApproxSearchParams) -> BTreeSet<(usize, usize)> {
-    let d_table = calculate_d_table(params.ref_string, params.search_string, params.c_table, params.o_table_rev);
-    inexact_recursion(params.search_string, (params.search_string.len() - 1) as i32, params.edits_left as i32, 1, params.ref_string.len() - 1, &d_table, params.o_table, params.c_table)
+pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, String, usize)> {
+    //let d_table = calculate_d_table(params.ref_string, params.search_string, params.c_table, params.o_table_rev);
+    
+    let d_table = vec![0; params.search_string.len()];
+    
+    inexact_recursion(
+        params.search_string, 
+        (params.search_string.len() - 1) as i32, 
+        params.edits_left as i32, 
+        1, params.ref_string.len() - 1, 
+        &d_table, params.o_table, params.c_table,
+        "".to_string(), 
+        0)
 }
 
-fn calculate_d_table(ref_word: &[u8], search_word: &[u8], c_table: &CTable, o_table: &OTable) -> DTable {
+fn calculate_d_table(ref_word: &[u8], search_string: &[u8], c_table: &CTable, o_table: &OTable) -> DTable {
     let mut start = 1;
     println!("ref string: {:?}", ref_word);
-    println!("search word: {:?}", search_word);
+    println!("search word: {:?}", search_string);
     let mut end = ref_word.len() - 1;
     let mut edits_left = 0;
     let mut D: DTable = Vec::new();
 
-    for i in 0..(search_word.len()) {
-        let i_char_num = usize::from(search_word[i]);
+    for i in 0..(search_string.len()) {
+        let i_char_num = usize::from(search_string[i]);
         start = c_table[i_char_num] + o_table[start - 1][i_char_num] + 1;
         end = c_table[i_char_num] + o_table[end][i_char_num];
         if start > end {
@@ -43,44 +54,78 @@ fn calculate_d_table(ref_word: &[u8], search_word: &[u8], c_table: &CTable, o_ta
     return D
 }
 
-fn inexact_recursion(search_word: &[u8], i: i32, edits_left: i32, left: usize, right: usize, d_table: &DTable, o_table: &OTable, c_table: &CTable) -> BTreeSet<(usize, usize)>{
+fn inexact_recursion(search_string: &[u8], i: i32, edits_left: i32, left: usize, right: usize, d_table: &DTable, o_table: &OTable, c_table: &CTable, cigar: String, edits_total: usize) -> HashSet<(usize, usize, String, usize)>{
     // println!("entered recursive loop at level: {}", i);
-
-    let mut left = left;
-    let mut right = right;
-    
     let lower_limit = match usize::try_from(i) {
         Ok(value) => d_table[value], 
-        Err(_) => 1,
+        Err(_) => 0,
     };
     
     if edits_left < lower_limit as i32 {
         // println!("  returned nothing");
-        return BTreeSet::new()
+        return HashSet::new()
     }
+
+    let mut result_set = HashSet::new();
 
     if i < 0 {
-        let set: BTreeSet<(usize, usize)> = [(left, right)].iter().cloned().collect();
-        // println!("  returned something: {:?}", set);
-        return set
+        result_set.insert((left, right, cigar, edits_total));
+        println!("  returned something: {:?}", result_set);
+        return result_set
     }
 
-    let mut result_set = BTreeSet::new();
-    result_set = result_set.union(&inexact_recursion(search_word, i-1, edits_left-1, left, right, d_table, o_table, c_table)).cloned().collect();
+    // Match/substitute operation
+    let current_char = search_string[i as usize];
+    let mut new_left;
+    let mut new_right ;
+
+    for c in 1..ALPHABET.len() {
+        new_left = c_table[c] + o_table[left][c];
+        new_right = c_table[c] + o_table[right][c];
+        let edit_cost = if c == current_char.into() {0} else {1};
+
+        if (edits_left - edit_cost) < 0 {continue};
+        if new_left >= new_right {continue};
+
+        result_set = result_set.union(&inexact_recursion(
+            search_string,
+            i-1,
+            edits_left - edit_cost,
+            new_left, new_right,
+            d_table, o_table, c_table,
+            format!("{}{}", "M", cigar),
+            edits_total + edit_cost as usize)
+        ).cloned().collect()
+    }
     
-    for (b, _) in ALPHABET.iter().enumerate() { 
-        // println!("pre-math  start: {} - end: {}", left, right);
-        left = c_table[b] + o_table[left][b];
-        right = c_table[b] + o_table[right][b];
-        // println!("post-math  start: {} - end: {}", left, right);
-        if left <= right {
-            result_set = result_set.union(&inexact_recursion(search_word, i, edits_left-1, left, right, d_table, o_table, c_table)).cloned().collect();
-            if b == search_word[i as usize].into() {
-                result_set = result_set.union(&inexact_recursion(search_word, i-1, edits_left, left, right, d_table, o_table, c_table)).cloned().collect();
-            } else {
-                result_set = result_set.union(&inexact_recursion(search_word, i-1, edits_left-1, left, right, d_table, o_table, c_table)).cloned().collect();
-            }
-        }
+    // Insertion operation
+    result_set = result_set.union(
+        &inexact_recursion(
+            search_string, 
+            i-1, 
+            edits_left - 1, 
+            left, right, 
+            d_table, o_table, c_table,
+            format!("{}{}", "I", cigar), edits_total + 1
+        )
+    ).cloned().collect();
+    
+    // Deletion operation
+    for c in 1..ALPHABET.len() {
+        new_left = c_table[c] + o_table[left][c];
+        new_right = c_table[c] + o_table[right][c];
+
+        if left >= right { continue };
+
+        result_set = result_set.union(&inexact_recursion(
+            search_string,
+            i,
+            edits_left - 1,
+            new_left, new_right,
+            d_table, o_table, c_table,
+            format!("{}{}", "D", cigar), edits_total + 1)
+        ).cloned().collect();
+            
     }
     return result_set
 } 
@@ -88,32 +133,121 @@ fn inexact_recursion(search_word: &[u8], i: i32, edits_left: i32, left: usize, r
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{string_to_ints, generate_c_table, generate_o_table, construct_suffix_array_naive};
+    use crate::{string_to_ints, generate_c_table, generate_o_table_naive, construct_suffix_array_naive};
 
     #[test]
-    fn test_1() {
+    fn test_att_with_1_edit() {
         let reference = string_to_ints("agatagattcaca$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
-        let mut reverse_reference = reference.clone();
-        reverse_reference.reverse();
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
 
         let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
 
         let params = ApproxSearchParams {
             ref_string: &reference, 
             search_string: &string_to_ints("att"),
-            o_table: &generate_o_table(&suffix_array),
+            o_table: &generate_o_table_naive(&suffix_array),
             c_table: &generate_c_table(&suffix_array),
-            o_table_rev: &generate_o_table(&reverse_suffix_array),
+            o_table_rev: &generate_o_table_naive(&reverse_suffix_array),
             edits_left: 1,
+        };
+
+        let search_result = approx_search(params);
+
+        println!("Actual results: ");
+
+        for res in search_result.iter() {
+            let mut bwt_string = String::new();
+            for i in res.1..(res.1 + reference.len()) {
+                let i = i % reference.len();
+                let bwt_int = bwt(&reference, &suffix_array.array, i);
+                let bwt_char = ALPHABET[bwt_int as usize];
+                bwt_string.push(bwt_char);
+            }
+
+            println!("{:?} for bwt> {}", res, bwt_string);
+        }
+
+        assert_eq!(search_result.len(), 2);
+        // assert!(search_result.contains(&(5, 5)));
+        // assert!(search_result.contains(&(6, 6)));
+    }
+    
+    #[test]
+    fn test_att_with_0_edit() {
+        let reference = string_to_ints("agatagattcaca$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            ref_string: &reference, 
+            search_string: &string_to_ints("att"),
+            o_table: &generate_o_table_naive(&suffix_array),
+            c_table: &generate_c_table(&suffix_array),
+            o_table_rev: &generate_o_table_naive(&reverse_suffix_array),
+            edits_left: 0,
         };
 
         let search_result = approx_search(params);
         println!("Actual result: {:?}", search_result);
 
         assert_eq!(search_result.len(), 2);
-        assert!(search_result.contains(&(5, 5)));
-        assert!(search_result.contains(&(6, 6)));
+        // assert!(search_result.contains(&(5, 5)));
+        // assert!(search_result.contains(&(6, 6)));
+    }
+
+    #[test]
+    fn test_simple() {
+        let reference = string_to_ints("aac$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            ref_string: &reference, 
+            search_string: &string_to_ints("acc"),
+            o_table: &generate_o_table_naive(&suffix_array),
+            c_table: &generate_c_table(&suffix_array),
+            o_table_rev: &generate_o_table_naive(&reverse_suffix_array),
+            edits_left: 1,
+        };
+
+        let search_result = approx_search(params);
+        println!("Actual result: {:?}", search_result);
+
+        assert_eq!(search_result.len(), 3);
+        // assert!(search_result.contains(&(5, 5)));
+        // assert!(search_result.contains(&(6, 6)));
+    }
+
+    #[test]
+    fn test_delete() {
+        let reference = string_to_ints("tacgt$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            ref_string: &reference, 
+            search_string: &string_to_ints("tagt"),
+            o_table: &generate_o_table_naive(&suffix_array),
+            c_table: &generate_c_table(&suffix_array),
+            o_table_rev: &generate_o_table_naive(&reverse_suffix_array),
+            edits_left: 1,
+        };
+
+        let search_result = approx_search(params);
+        println!("Actual result: {:?}", search_result);
+
+        assert_eq!(search_result.len(), 1);
+        //assert!(search_result.contains(&(5, 5)));
     }
 }

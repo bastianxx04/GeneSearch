@@ -9,7 +9,7 @@ use suffix_array_construction::construct_suffix_array_naive;
 use exact_search::{naive_exact_search, backwards_search_with_bwt};
 use approx_search::{approx_search, ApproxSearchParams};
 use types::*;
-use table_gen::{generate_c_table, generate_o_table};
+use table_gen::{generate_c_table, generate_o_table_naive};
 use util::*;
 
 const ALPHABET: [char; 5] = ['$', 'a', 'c', 'g', 't'];
@@ -23,7 +23,7 @@ fn main() {
     let suffix_array = construct_suffix_array_naive(&genome);
     println!("Suffix array: {:?}", suffix_array);
 
-    let o_table = generate_o_table(&suffix_array);
+    let o_table = generate_o_table_naive(&suffix_array);
     print_o_table(&o_table, &genome, &suffix_array.array);
     let c_table = generate_c_table(&suffix_array);
     println!("C-table:\n{:?}", c_table);
@@ -48,7 +48,7 @@ fn main() {
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
     let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
-    let reverse_o_table = generate_o_table(&reverse_suffix_array);
+    let reverse_o_table = generate_o_table_naive(&reverse_suffix_array);
     print_o_table(&reverse_o_table, &reverse_genome, &reverse_suffix_array.array);
     println!("c table: {:?}", c_table);
     
@@ -63,18 +63,6 @@ fn main() {
     println!("{:?}",approx_search(params));
 }
 
-fn string_to_ints(s: &str) -> Vec<u8> {
-    s.chars()
-        .map(|c| match c {
-            '$' => 0,
-            'a' => 1,
-            'c' => 2,
-            'g' => 3,
-            't' => 4,
-            _ => panic!("Bad string"),
-        })
-        .collect()
-}
 
 //TODO: MAKE SA-IS
 //TODO: MAKE APPROX SEARCH

@@ -55,13 +55,13 @@ pub fn naive_exact_search(suffix_array: &SuffixArray, query: &[u8]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{string_to_ints, generate_c_table, generate_o_table, construct_suffix_array_naive};
+    use crate::{string_to_ints, generate_c_table, generate_o_table_naive, construct_suffix_array_naive};
 
     #[test]
     fn test_bwt_search_1_match() {
         let reference = string_to_ints("agatagattcaca$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&suffix_array);
+        let o_table = generate_o_table_naive(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("att");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
@@ -73,7 +73,7 @@ mod tests {
     fn test_bwt_search_2_matches() {
         let reference = string_to_ints("agaga$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&suffix_array);
+        let o_table = generate_o_table_naive(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aga");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
@@ -85,7 +85,7 @@ mod tests {
     fn test_bwt_search_0_matches() {
         let reference = string_to_ints("agaga$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&suffix_array);
+        let o_table = generate_o_table_naive(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aca");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);

@@ -2,6 +2,8 @@ alphabet1 = ['$', 'A', 'C', 'G', 'T']
 alphabet2 = ['$', 'G', 'L', 'O']
 full_string = "AGATAGATTCACA$"
 full_string_rev = full_string[::-1]
+full_string2 = "AGATAGATTCACA$"
+full_string2_rev = full_string[::-1]
 
 # Test D stuff
 string_googol = "GOOGOL$"
@@ -114,16 +116,16 @@ def calculate_d(W, bwt, O, C):
 
 
 def inex_recur(C, O, D, A, W, i, edits_left, L, R):
-    print(f"entered recur with level {i} and {D[-1]}")
+    #print(f"entered recur with level {i} and {D[-1]}")
     
     lower_limit = D[i]
 
     if edits_left < lower_limit:
-        print(f"    returned nothing")
+        #print(f"    returned nothing")
         return set()
 
     if i < 0:
-        print(f"    returned something")
+        #print(f"    returned something")
         return {(L, R)}
     
     I = set()
@@ -131,10 +133,10 @@ def inex_recur(C, O, D, A, W, i, edits_left, L, R):
     
     for b in A:
 
-        print(f"in loop: start: {L} - end: {R}")
+        #print(f"in loop: start: {L} - end: {R}")
         L = C[b] + O[b, L]
         R = C[b] + O[b, R]
-        print(f"after mathing: start: {L} - end: {R}")
+        #print(f"after mathing: start: {L} - end: {R}")
         if L <= R:
             I = I.union(inex_recur(C, O, D, A, W, i, edits_left - 1, L, R))
             if b == W[i]:
@@ -145,7 +147,7 @@ def inex_recur(C, O, D, A, W, i, edits_left, L, R):
 
 
 def run(string, alphabet):
-    search_word = "CCC"
+    search_word = "ATT"
     print("String: ", string)
     bwt = create_suffix_array(string)
     c_table = create_c_table(bwt, alphabet)
@@ -158,4 +160,4 @@ def run(string, alphabet):
     print(result)
 
 
-run(full_string_rev, alphabet1)
+run(full_string2, alphabet1)
