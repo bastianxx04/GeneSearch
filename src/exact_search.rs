@@ -4,29 +4,16 @@ use std::{
     usize,
 };
 
-/// Burrows-Wheeler Transform based search
-pub fn backwards_search_with_bwt(
-    query: &[u8],
-    o_table: &OTable,
-    c_table: &[usize],
-) -> (usize, usize) {
-    println!("{:?}", c_table);
-    println!("{}", o_table);
-    let c = *query.last().expect("Got an empty string") as usize;
+/// Backwards search with Burrows-Wheeler Transform. Inspired by "String Algorithms in C".
+pub fn bwt_search(query: &[u8], o_table: &OTable, c_table: &[usize]) -> (usize, usize) {
+    let (_, cols) = o_table.shape();
 
-    let mut start = c_table[c];
+    let mut start = 0;
+    let mut end = cols - 1;
 
-    let mut end: usize = if c + 1 < c_table.len() {
-        c_table[c + 1]
-    } else {
-        o_table.shape().1 - 1
-    };
-
-    for &c in query[..query.len() - 1].iter().rev() {
-        println!("(start: {}, end: {})", start, end);
-        let c_rank = c_table[c as usize] - 1; // c_rank = 4
-        start = c_rank + o_table.get(c, start) + 1;
-        end = c_rank + o_table.get(c, end);
+    for &a in query.iter().rev() {
+        start = c_table[a as usize] + o_table.get(a, start);
+        end = c_table[a as usize] + o_table.get(a, end);
     }
 
     (start, end - 1)
@@ -67,7 +54,7 @@ mod tests {
         let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("att");
-        let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+        let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 2), search_result);
     }
@@ -79,7 +66,7 @@ mod tests {
         let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aga");
-        let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+        let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
     }
@@ -91,7 +78,7 @@ mod tests {
         let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aga");
-        let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+        let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
     }
@@ -103,7 +90,19 @@ mod tests {
         let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aca");
-        let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+        let search_result = bwt_search(&search_string, &o_table, &c_table);
+
+        assert!(search_result.0 > search_result.1);
+    }
+
+    #[test]
+    fn test_bwt_search_query_longer_than_reference() {
+        let reference = string_to_ints("agaga$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+        let o_table = generate_o_table(&suffix_array);
+        let c_table = generate_c_table(&suffix_array);
+        let search_string = string_to_ints("acaagagaga");
+        let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
     }

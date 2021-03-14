@@ -6,7 +6,7 @@ mod types;
 mod util;
 
 use approx_search::{approx_search, ApproxSearchParams};
-use exact_search::{backwards_search_with_bwt, naive_exact_search};
+use exact_search::{bwt_search, naive_exact_search};
 use suffix_array_construction::construct_suffix_array_naive;
 use table_gen::{generate_c_table, generate_o_table};
 use types::*;
@@ -45,7 +45,7 @@ fn main() {
 
     println!("{:?}", genome);
     let search_string = string_to_ints("att");
-    let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+    let search_result = bwt_search(&search_string, &o_table, &c_table);
     println!(
         "Searched for {:?}, with bwt-search, found at {:?}",
         search_string, search_result
