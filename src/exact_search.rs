@@ -1,32 +1,35 @@
-use crate::types::SuffixArray;
-use std::{cmp::{Ordering, min}, usize};
+use crate::types::{OTable, SuffixArray};
+use std::{
+    cmp::{min, Ordering},
+    usize,
+};
 
 /// Burrows-Wheeler Transform based search
-pub fn backwards_search_with_bwt(query: &[u8], o_table: &Vec<Vec<usize>>, c_table: &[usize]) -> (usize, usize) {
-    
-    let last_char = query
-        .last()
-        .expect("Got an empty string");
+pub fn backwards_search_with_bwt(
+    query: &[u8],
+    o_table: &OTable,
+    c_table: &[usize],
+) -> (usize, usize) {
+    println!("{:?}", c_table);
+    println!("{}", o_table);
+    let c = *query.last().expect("Got an empty string") as usize;
 
-    let c = *last_char as usize;
-    
     let mut start = c_table[c];
-    
-    let mut end: usize = if c+1 >= c_table.len(){
-        o_table.len()-1
+
+    let mut end: usize = if c + 1 < c_table.len() {
+        c_table[c + 1]
     } else {
-        c_table[c+1]-1
+        o_table.shape().1 - 1
     };
 
-    for c in query[..query.len()-1].iter().rev() {
-        let c = *c as usize;
-        println!("(start: {}, end: {})",start,end);
-        
-        start = c_table[c] + o_table[start-1][c];
-        end = c_table[c] + o_table[end][c]-1
-    }   
+    for &c in query[..query.len() - 1].iter().rev() {
+        println!("(start: {}, end: {})", start, end);
+        let c_rank = c_table[c as usize] - 1; // c_rank = 4
+        start = c_rank + o_table.get(c, start) + 1;
+        end = c_rank + o_table.get(c, end);
+    }
 
-    (start, end)
+    (start, end - 1)
 }
 
 /// Exact search based on binary search through the suffix array
@@ -39,7 +42,7 @@ pub fn naive_exact_search(suffix_array: &SuffixArray, query: &[u8]) -> usize {
 
         let i = suffix_array.array[mid];
         let j = min(i + query.len(), suffix_array.string.len());
-        
+
         let cmp_string = &suffix_array.string[i..j];
 
         match query.cmp(&cmp_string) {
@@ -55,25 +58,37 @@ pub fn naive_exact_search(suffix_array: &SuffixArray, query: &[u8]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{string_to_ints, generate_c_table, generate_o_table_naive, construct_suffix_array_naive};
+    use crate::{construct_suffix_array_naive, generate_c_table, generate_o_table, string_to_ints};
 
     #[test]
     fn test_bwt_search_1_match() {
-        let reference = string_to_ints("agatagattcaca$");
+        let reference = string_to_ints("cattga$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table_naive(&suffix_array);
+        let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("att");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
 
-        assert_eq!((6, 6), search_result);
+        assert_eq!((2, 2), search_result);
+    }
+
+    #[test]
+    fn test_bwt_search_banana() {
+        let reference = string_to_ints("cagaga$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+        let o_table = generate_o_table(&suffix_array);
+        let c_table = generate_c_table(&suffix_array);
+        let search_string = string_to_ints("aga");
+        let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
+
+        assert_eq!((2, 3), search_result);
     }
 
     #[test]
     fn test_bwt_search_2_matches() {
         let reference = string_to_ints("agaga$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table_naive(&suffix_array);
+        let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aga");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);
@@ -85,7 +100,7 @@ mod tests {
     fn test_bwt_search_0_matches() {
         let reference = string_to_ints("agaga$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table_naive(&suffix_array);
+        let o_table = generate_o_table(&suffix_array);
         let c_table = generate_c_table(&suffix_array);
         let search_string = string_to_ints("aca");
         let search_result = backwards_search_with_bwt(&search_string, &o_table, &c_table);

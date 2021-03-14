@@ -1,29 +1,5 @@
 use crate::ALPHABET;
 
-pub fn print_o_table(o: &Vec<Vec<usize>>, x: &Vec<u8>, sa: &Vec<usize>) {
-    println!("O-table:");
-
-    // Header row
-    print!("{:>3}", ' ');
-
-    for i in 0..sa.len() {
-        let j = bwt(x, sa, i);
-        let c = ALPHABET[j as usize];
-        print!("{:>3}", c);
-    }
-    println!();
-
-    // Data rows
-    for (i, c) in ALPHABET.iter().enumerate() {
-        print!("{:>3}", c);
-        for j in 0..x.len() {
-            let v = o[j][i];
-            print!("{:>3}", v);
-        }
-        println!();
-    }
-}
-
 pub fn string_to_ints(s: &str) -> Vec<u8> {
     s.chars()
         .map(|c| match c {
@@ -44,4 +20,12 @@ pub fn bwt(x: &[u8], sa: &[usize], i: usize) -> u8 {
     } else {
         x[x_index - 1]
     }
+}
+
+pub fn bwt_string(x: &[u8], sa: &[usize]) -> String {
+    let mut res = String::new();
+    for i in 0..x.len() {
+        res.push(ALPHABET[bwt(x, sa, i) as usize])
+    }
+    res
 }
