@@ -1,5 +1,3 @@
-use crate::ALPHABET;
-
 pub fn string_to_ints(s: &str) -> Vec<u8> {
     s.chars()
         .map(|c| match c {
@@ -20,12 +18,4 @@ pub fn bwt(x: &[u8], sa: &[usize], i: usize) -> u8 {
     } else {
         x[x_index - 1]
     }
-}
-
-pub fn bwt_string(x: &[u8], sa: &[usize]) -> String {
-    let mut res = String::new();
-    for i in 0..x.len() {
-        res.push(ALPHABET[bwt(x, sa, i) as usize])
-    }
-    res
 }
