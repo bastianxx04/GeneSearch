@@ -59,8 +59,8 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
                 &d_table,
                 o_table,
                 c_table,
-                String::from("M"),
-                0,
+                String::from(if edit_cost == 0 { "M" } else { "S" }),
+                edit_cost as usize,
             ))
             .cloned()
             .collect();
@@ -171,7 +171,7 @@ fn inexact_recursion(
                 d_table,
                 o_table,
                 c_table,
-                format!("{}{}", "M", cigar),
+                format!("{}{}", if edit_cost == 0 { "M" } else { "S" }, cigar),
                 edits_total + edit_cost as usize,
             ))
             .cloned()
@@ -229,7 +229,7 @@ fn inexact_recursion(
 mod tests {
     use super::*;
     use crate::{
-        bwt, construct_suffix_array_naive, generate_c_table, generate_o_table, string_to_ints,
+        bwm, bwt, construct_suffix_array_naive, generate_c_table, generate_o_table, string_to_ints,
     };
 
     #[test]
@@ -263,12 +263,15 @@ mod tests {
                 bwt_string.push(bwt_char);
             }
 
-            println!("{:?} for bwt> {}", res, bwt_string);
+            println!("{:?} for bwt> {:?}", res, bwm(&reference, res.0));
         }
 
-        assert_eq!(search_result.len(), 2);
-        // assert!(search_result.contains(&(5, 5)));
-        // assert!(search_result.contains(&(6, 6)));
+        assert_eq!(search_result.len(), 5);
+        assert!(search_result.contains(&(13, 14, "IMM".to_string(), 1)));
+        assert!(search_result.contains(&(5, 7, "MMI".to_string(), 1)));
+        assert!(search_result.contains(&(5, 7, "MIM".to_string(), 1)));
+        assert!(search_result.contains(&(6, 7, "MMM".to_string(), 0)));
+        assert!(search_result.contains(&(5, 6, "MMS".to_string(), 1)));
     }
 
     #[test]
@@ -292,9 +295,8 @@ mod tests {
         let search_result = approx_search(params);
         println!("Actual result: {:?}", search_result);
 
-        assert_eq!(search_result.len(), 2);
-        // assert!(search_result.contains(&(5, 5)));
-        // assert!(search_result.contains(&(6, 6)));
+        assert_eq!(search_result.len(), 1);
+        assert!(search_result.contains(&(6, 7, String::from("MMM"), 0)));
     }
 
     #[test]
@@ -324,6 +326,31 @@ mod tests {
     }
 
     #[test]
+    fn test_substitute() {
+        let reference = string_to_ints("acg$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            reference: &reference,
+            query: &string_to_ints("agg"),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
+            edits: 1,
+        };
+
+        let results = approx_search(params);
+        println!("Actual result: {:?}", results);
+
+        assert_eq!(results.len(), 1);
+        assert!(results.contains(&(1, 2, "MSM".to_string(), 1)));
+    }
+
+    #[test]
     fn test_delete() {
         let reference = string_to_ints("tacgt$");
         let suffix_array = construct_suffix_array_naive(&reference);
@@ -346,11 +373,74 @@ mod tests {
 
         assert_eq!(results.len(), 1);
         match results.iter().next() {
-            Some(v) => {
-                assert_eq!(v.0, 5);
-                assert_eq!(v.0, 5);
+            Some((start, end, edits, num_edits)) => {
+                assert_eq!(start, &5);
+                assert_eq!(end, &6);
+                assert_eq!(edits, "MMDMM");
+                assert_eq!(num_edits, &1);
             }
-            None => {}
+            None => {
+                panic!("did not find any results")
+            }
         }
+    }
+
+    #[test]
+    fn test_insert() {
+        let reference = string_to_ints("ac$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            reference: &reference,
+            query: &string_to_ints("acg"),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
+            edits: 1,
+        };
+
+        let results = approx_search(params);
+        println!("Actual result: {:?}", results);
+
+        assert_eq!(results.len(), 1);
+        match results.iter().next() {
+            Some((start, end, edits, num_edits)) => {
+                assert_eq!(start, &1);
+                assert_eq!(end, &2);
+                assert_eq!(edits, "MMI");
+                assert_eq!(num_edits, &1);
+            }
+            None => {
+                panic!("did not find any results")
+            }
+        }
+    }
+
+    #[test]
+    fn test_too_long_query() {
+        let reference = string_to_ints("acgt$");
+        let suffix_array = construct_suffix_array_naive(&reference);
+
+        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
+
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+
+        let params = ApproxSearchParams {
+            reference: &reference,
+            query: &string_to_ints("acgtgtgt"),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
+            edits: 1,
+        };
+
+        let results = approx_search(params);
+        println!("Actual result: {:?}", results);
+
+        assert_eq!(results.len(), 0);
     }
 }
