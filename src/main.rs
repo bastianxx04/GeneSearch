@@ -60,12 +60,12 @@ fn main() {
     println!("c table: {:?}", c_table);
 
     let params = ApproxSearchParams {
-        ref_string: &genome,
-        search_string: &string_to_ints("att"),
+        reference: &genome,
+        query: &string_to_ints("att"),
         o_table: &o_table,
         c_table: &c_table,
-        o_table_rev: &reverse_o_table,
-        edits_left: 1,
+        o_rev_table: &reverse_o_table,
+        edits: 1,
     };
     println!("{:?}", approx_search(params));
 }
