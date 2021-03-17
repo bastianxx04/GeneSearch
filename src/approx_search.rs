@@ -194,9 +194,9 @@ mod tests {
         let params = ApproxSearchParams {
             ref_string: &reference,
             search_string: &string_to_ints("att"),
-            o_table: &generate_o_table(&suffix_array),
-            c_table: &generate_c_table(&suffix_array),
-            o_table_rev: &generate_o_table(&reverse_suffix_array),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_table_rev: &generate_o_table(&reverse_reference, &reverse_suffix_array),
             edits_left: 1,
         };
 
@@ -208,7 +208,7 @@ mod tests {
             let mut bwt_string = String::new();
             for i in res.1..(res.1 + reference.len()) {
                 let i = i % reference.len();
-                let bwt_int = bwt(&reference, &suffix_array.array, i);
+                let bwt_int = bwt(&reference, &suffix_array, i);
                 let bwt_char = ALPHABET[bwt_int as usize];
                 bwt_string.push(bwt_char);
             }
@@ -233,9 +233,9 @@ mod tests {
         let params = ApproxSearchParams {
             ref_string: &reference,
             search_string: &string_to_ints("att"),
-            o_table: &generate_o_table(&suffix_array),
-            c_table: &generate_c_table(&suffix_array),
-            o_table_rev: &generate_o_table(&reverse_suffix_array),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_table_rev: &generate_o_table(&reverse_reference, &reverse_suffix_array),
             edits_left: 0,
         };
 
@@ -259,9 +259,9 @@ mod tests {
         let params = ApproxSearchParams {
             ref_string: &reference,
             search_string: &string_to_ints("acc"),
-            o_table: &generate_o_table(&suffix_array),
-            c_table: &generate_c_table(&suffix_array),
-            o_table_rev: &generate_o_table(&reverse_suffix_array),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_table_rev: &generate_o_table(&reverse_reference, &reverse_suffix_array),
             edits_left: 1,
         };
 
@@ -285,9 +285,9 @@ mod tests {
         let params = ApproxSearchParams {
             ref_string: &reference,
             search_string: &string_to_ints("tagt"),
-            o_table: &generate_o_table(&suffix_array),
-            c_table: &generate_c_table(&suffix_array),
-            o_table_rev: &generate_o_table(&reverse_suffix_array),
+            o_table: &generate_o_table(&reference, &suffix_array),
+            c_table: &generate_c_table(&reference),
+            o_table_rev: &generate_o_table(&reverse_reference, &reverse_suffix_array),
             edits_left: 1,
         };
 

@@ -23,23 +23,23 @@ fn main() {
     let suffix_array = construct_suffix_array_naive(&genome);
     println!("Suffix array: {:?}", suffix_array);
 
-    let o_table = generate_o_table(&suffix_array);
+    let o_table = generate_o_table(&genome, &suffix_array);
     println!("{}", o_table);
-    let c_table = generate_c_table(&suffix_array);
+    let c_table = generate_c_table(&genome);
     println!("C-table:\n{:?}", c_table);
 
     // Search with naive binary search
     let search_string_ints = string_to_ints("cgc");
-    let search_result = naive_exact_search(&suffix_array, &search_string_ints);
+    let search_result = naive_exact_search(&genome, &suffix_array, &search_string_ints);
 
     //search with bwt exact search
-    if search_result == suffix_array.array.len() {
+    if search_result == suffix_array.len() {
         println!("No match :(")
     } else {
         println!(
             "Searched for {:?}, with naïve, found at {:?}",
             search_string_ints,
-            suffix_array.array[search_result] + 1
+            suffix_array[search_result] + 1
         );
     }
 
@@ -55,7 +55,7 @@ fn main() {
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
     let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
-    let reverse_o_table = generate_o_table(&reverse_suffix_array);
+    let reverse_o_table = generate_o_table(&reverse_genome, &reverse_suffix_array);
     println!("{}", reverse_o_table);
     println!("c table: {:?}", c_table);
 

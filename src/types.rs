@@ -2,11 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::{bwt, ALPHABET};
 
-#[derive(Debug)]
-pub struct SuffixArray<'a> {
-    pub string: &'a Vec<u8>,
-    pub array: Vec<usize>,
-}
+pub type SuffixArray = Vec<usize>;
 
 pub type CTable = Vec<usize>;
 
@@ -106,7 +102,7 @@ mod tests {
     fn test_1() {
         let reference = string_to_ints("acg$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let mut o_table = OTable::new(&reference, &suffix_array.array);
+        let mut o_table = OTable::new(&reference, &suffix_array);
         o_table.set(2, 3, 1);
         println!("{}", o_table);
     }
