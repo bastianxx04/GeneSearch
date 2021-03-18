@@ -1,0 +1,23 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/components-nightly@v1
+    - name: Build
+      run: cargo build --verbose
+    - name: Benchmarks
+      run: cargo bench 
+    - name: Run tests
+      run: cargo test --verbose
