@@ -17,6 +17,7 @@ pub fn bwt(x: &[u8], sa: &[usize], i: usize) -> u8 {
 }
 
 // Gets the i'th row of BWM for x
+#[allow(dead_code)]
 pub fn bwm(x: &[u8], i: usize) -> String {
     let mut rows = vec![Vec::new(); x.len()];
     for j in 0..x.len() {
@@ -34,5 +35,5 @@ pub fn bwm(x: &[u8], i: usize) -> String {
     for a in row {
         res.push(ALPHABET[a as usize])
     }
-    return res;
+    res
 }

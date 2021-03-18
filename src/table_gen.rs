@@ -1,6 +1,5 @@
 use crate::types::OTable;
 use crate::util::bwt;
-use crate::SuffixArray;
 use crate::ALPHABET;
 
 /// Generate an O-table. Inspired by "String Algorithms in C"
@@ -23,7 +22,7 @@ pub fn generate_o_table<'a>(reference: &'a [u8], suffix_array: &'a [usize]) -> O
 }
 
 #[allow(dead_code)]
-fn generate_o_table_naive(reference: &[u8], suffix_array: &SuffixArray) -> Vec<Vec<usize>> {
+fn generate_o_table_naive(reference: &[u8], suffix_array: &[usize]) -> Vec<Vec<usize>> {
     //ORDER: A, C, G, T
     let mut old_rank_table = vec![0, 0, 0, 0, 0];
     let mut new_bwt_output = Vec::new();

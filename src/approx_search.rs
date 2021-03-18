@@ -21,7 +21,6 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
         params.c_table,
         params.o_rev_table,
     );
-    println!("D-table: {:?}", d_table);
     let o_table = params.o_table;
     let c_table = params.c_table;
 
@@ -89,7 +88,7 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
 fn calculate_d_table(
     reference: &[u8],
     query: &[u8],
-    c_table: &CTable,
+    c_table: &[usize],
     o_rev_table: &OTable,
 ) -> DTable {
     let mut start = 1;
@@ -97,8 +96,8 @@ fn calculate_d_table(
     let mut edits_left = 0;
     let mut d_table: DTable = Vec::new();
 
-    for i in 0..(query.len()) {
-        let current_symbol = usize::from(query[i]);
+    for c in query {
+        let current_symbol = usize::from(*c);
         start = c_table[current_symbol] + o_rev_table.get(current_symbol as u8, start - 1) + 1;
         end = c_table[current_symbol] + o_rev_table.get(current_symbol as u8, end);
         if start > end {
@@ -109,7 +108,7 @@ fn calculate_d_table(
         d_table.push(edits_left);
     }
 
-    return d_table;
+    d_table
 }
 
 fn inexact_recursion(
@@ -118,9 +117,9 @@ fn inexact_recursion(
     edits_left: i32,
     left: usize,
     right: usize,
-    d_table: &DTable,
+    d_table: &[usize],
     o_table: &OTable,
-    c_table: &CTable,
+    c_table: &[usize],
     cigar: String,
     edits_total: usize,
 ) -> HashSet<(usize, usize, String, usize)> {
@@ -131,7 +130,6 @@ fn inexact_recursion(
     };
 
     if edits_left < lower_limit as i32 {
-        // println!("  returned nothing");
         return HashSet::new();
     }
 
@@ -139,7 +137,6 @@ fn inexact_recursion(
 
     if i < 0 {
         result_set.insert((left, right, cigar, edits_total));
-        println!("  returned something: {:?}", result_set);
         return result_set;
     }
 
@@ -222,7 +219,7 @@ fn inexact_recursion(
             .cloned()
             .collect();
     }
-    return result_set;
+    result_set
 }
 
 #[cfg(test)]

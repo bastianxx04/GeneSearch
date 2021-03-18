@@ -74,7 +74,7 @@ impl<'a> Display for OTable<'a> {
             let c = ALPHABET[j as usize];
             write!(f, "{:>3}", c)?;
         }
-        write!(f, "\n")?;
+        writeln!(f, )?;
 
         // Data rows
         for (i, c) in ALPHABET.iter().enumerate() {
@@ -83,7 +83,7 @@ impl<'a> Display for OTable<'a> {
                 let v = self.get(i as u8, j);
                 write!(f, "{:>3}", v)?;
             }
-            write!(f, "\n")?;
+            writeln!(f, )?;
         }
 
         Ok(())

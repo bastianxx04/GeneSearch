@@ -1,7 +1,0 @@
-=== TESTS ===
-
-    Table generation took 5003302100 ns 
-
-    Exact Search took 7600 ns and yielded (11662, 11661) 
-
-    Approx search took 4703492600 ns and yielded {}

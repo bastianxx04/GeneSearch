@@ -1,4 +1,4 @@
-use crate::types::{OTable, SuffixArray};
+use crate::types::OTable;
 use std::{
     cmp::{min, Ordering},
     usize,
@@ -20,7 +20,8 @@ pub fn bwt_search(query: &[u8], o_table: &OTable, c_table: &[usize]) -> (usize, 
 }
 
 /// Exact search based on binary search through the suffix array
-pub fn naive_exact_search(reference: &[u8], suffix_array: &SuffixArray, query: &[u8]) -> usize {
+#[allow(dead_code)]
+pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]) -> usize {
     let mut low = 0;
     let mut high = suffix_array.len();
 
