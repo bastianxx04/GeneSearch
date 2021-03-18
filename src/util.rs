@@ -2,14 +2,8 @@ use crate::ALPHABET;
 
 pub fn string_to_ints(s: &str) -> Vec<u8> {
     s.chars()
-        .map(|c| match c {
-            '$' => 0,
-            'a' => 1,
-            'c' => 2,
-            'g' => 3,
-            't' => 4,
-            _ => panic!("Bad string"),
-        })
+        .flat_map(|c| ALPHABET.iter().position(|a| a == &c))
+        .map(|c| c as u8)
         .collect()
 }
 

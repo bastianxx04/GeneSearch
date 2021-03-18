@@ -49,11 +49,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_1_match() {
-        let reference = string_to_ints("cattga$");
+        let reference = string_to_ints("CATTGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("att");
+        let search_string = string_to_ints("ATT");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 2), search_result);
@@ -61,11 +61,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_banana() {
-        let reference = string_to_ints("cagaga$");
+        let reference = string_to_ints("CAGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("aga");
+        let search_string = string_to_ints("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
@@ -73,11 +73,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_2_matches() {
-        let reference = string_to_ints("agaga$");
+        let reference = string_to_ints("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("aga");
+        let search_string = string_to_ints("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
@@ -85,11 +85,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_0_matches() {
-        let reference = string_to_ints("agaga$");
+        let reference = string_to_ints("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("aca");
+        let search_string = string_to_ints("ACA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
@@ -97,11 +97,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_query_longer_than_reference() {
-        let reference = string_to_ints("agaga$");
+        let reference = string_to_ints("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("acaagagaga");
+        let search_string = string_to_ints("ACAAGAGAGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);

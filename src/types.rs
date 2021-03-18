@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let reference = string_to_ints("acg$");
+        let reference = string_to_ints("ACG$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let mut o_table = OTable::new(&reference, &suffix_array);
         o_table.set(2, 3, 1);

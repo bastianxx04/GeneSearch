@@ -235,6 +235,7 @@ mod tests {
     #[test]
     fn test_att_with_1_edit() {
         let reference = string_to_ints("agatagattcaca$");
+        let reference = string_to_ints("AGATAGATTCACA$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -243,7 +244,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("att"),
+            query: &string_to_ints("ATT"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -276,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_att_with_0_edit() {
-        let reference = string_to_ints("agatagattcaca$");
+        let reference = string_to_ints("AGATAGATTCACA$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -285,7 +286,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("att"),
+            query: &string_to_ints("ATT"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -301,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_simple() {
-        let reference = string_to_ints("aac$");
+        let reference = string_to_ints("AAC$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -310,7 +311,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("acc"),
+            query: &string_to_ints("ACC"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -327,7 +328,7 @@ mod tests {
 
     #[test]
     fn test_substitute() {
-        let reference = string_to_ints("acg$");
+        let reference = string_to_ints("ACG$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -336,7 +337,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("agg"),
+            query: &string_to_ints("AGG"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -352,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_delete() {
-        let reference = string_to_ints("tacgt$");
+        let reference = string_to_ints("TACGT$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -361,7 +362,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("tagt"),
+            query: &string_to_ints("TAGT"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -387,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_insert() {
-        let reference = string_to_ints("ac$");
+        let reference = string_to_ints("AC$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -396,7 +397,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("acg"),
+            query: &string_to_ints("ACG"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
@@ -422,7 +423,7 @@ mod tests {
 
     #[test]
     fn test_too_long_query() {
-        let reference = string_to_ints("acgt$");
+        let reference = string_to_ints("ACGT$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -431,7 +432,7 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &string_to_ints("acgtgtgt"),
+            query: &string_to_ints("ACGTGTGT"),
             o_table: &generate_o_table(&reference, &suffix_array),
             c_table: &generate_c_table(&reference),
             o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),

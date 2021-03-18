@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_o_table_size() {
-        let reference = string_to_ints("acgt$");
+        let reference = string_to_ints("ACGT$");
         let sa = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &sa);
         let (rows, cols) = o_table.shape();
