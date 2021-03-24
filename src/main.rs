@@ -1,5 +1,4 @@
 #![feature(test)]
-
 extern crate test;
 
 mod approx_search;
@@ -174,17 +173,6 @@ Approx search took {} ns ({} s) and yielded {} \n
     file.write_all(file_string.as_bytes())?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_entire_system(b: &mut Bencher) {
-        b.iter(|| (0..1000).fold(0, |old, new| old ^ new))
-    }
 }
 
 //TODO: MAKE SA-IS

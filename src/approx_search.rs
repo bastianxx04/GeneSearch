@@ -4,6 +4,7 @@ use crate::{types::OTable, CTable};
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
+#[derive(Copy, Clone)]
 pub struct ApproxSearchParams<'a> {
     pub reference: &'a [u8],
     pub query: &'a [u8],
@@ -226,12 +227,13 @@ fn inexact_recursion(
 mod tests {
     use super::*;
     use crate::{
-        bwm, bwt, construct_suffix_array_naive, generate_c_table, generate_o_table, string_to_ints,
+        bwm, bwt, construct_suffix_array_naive, generate_c_table, generate_o_table, read_genome,
+        string_to_ints, HG38_1000_PATH,
     };
+    use test::Bencher;
 
     #[test]
     fn test_att_with_1_edit() {
-        let reference = string_to_ints("agatagattcaca$");
         let reference = string_to_ints("AGATAGATTCACA$");
         let suffix_array = construct_suffix_array_naive(&reference);
 
@@ -440,5 +442,23 @@ mod tests {
         println!("Actual result: {:?}", results);
 
         assert_eq!(results.len(), 0);
+    }
+
+    #[bench]
+    fn bench_approx_search_ref1000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome = string_to_ints(&genome_string);
+        let suffix_array = construct_suffix_array_naive(&genome);
+        let reverse_reference: Vec<u8> = genome.iter().rev().map(|&x| x).collect();
+        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+        let params = ApproxSearchParams {
+            reference: &genome,
+            query: &string_to_ints("CTCCATCATGTCTTATGGCG"),
+            o_table: &generate_o_table(&genome, &suffix_array),
+            c_table: &generate_c_table(&genome),
+            o_rev_table: &generate_o_table(&reverse_reference, &reverse_suffix_array),
+            edits: 1,
+        };
+        b.iter(|| approx_search(params))
     }
 }
