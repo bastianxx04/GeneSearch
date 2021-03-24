@@ -20,14 +20,14 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{read_genome, util::string_to_ints};
+    use crate::{read_genome, util::string_to_ints, HG38_1000_PATH};
 
     use super::*;
     use test::Bencher;
 
     #[bench]
     fn bench_sa_naive_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome("resources/hg38-1000.fa").unwrap();
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = string_to_ints(&genome_string);
         b.iter(|| construct_suffix_array_naive(&genome))
     }
