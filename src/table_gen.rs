@@ -54,7 +54,8 @@ pub fn generate_c_table(reference: &[u8]) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{construct_suffix_array_naive, string_to_ints};
+    use crate::{construct_suffix_array_naive, read_genome, string_to_ints, HG38_1000_PATH};
+    use test::Bencher;
 
     #[test]
     fn test_o_table_size() {
@@ -64,5 +65,20 @@ mod tests {
         let (rows, cols) = o_table.shape();
         assert_eq!(rows, ALPHABET.len());
         assert_eq!(cols, reference.len() + 1);
+    }
+
+    #[bench]
+    fn bench_o_table_ref1000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome = string_to_ints(&genome_string);
+        let suffix_array = construct_suffix_array_naive(&genome);
+        b.iter(|| generate_o_table(&genome, &suffix_array));
+    }
+
+    #[bench]
+    fn bench_c_table_ref1000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome = string_to_ints(&genome_string);
+        b.iter(|| generate_c_table(&genome));
     }
 }

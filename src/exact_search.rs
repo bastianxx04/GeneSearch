@@ -46,7 +46,11 @@ pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{construct_suffix_array_naive, generate_c_table, generate_o_table, string_to_ints};
+    use crate::{
+        construct_suffix_array_naive, generate_c_table, generate_o_table, read_genome,
+        string_to_ints, HG38_1000_PATH,
+    };
+    use test::Bencher;
 
     #[test]
     fn test_bwt_search_1_match() {
@@ -106,5 +110,16 @@ mod tests {
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
+    }
+
+    #[bench]
+    fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome = string_to_ints(&genome_string);
+        let suffix_array = construct_suffix_array_naive(&genome);
+        let o_table = generate_o_table(&genome, &suffix_array);
+        let c_table = generate_c_table(&genome);
+        let query = string_to_ints("CTCCATCATGTCTTATGGCG");
+        b.iter(|| bwt_search(&query, &o_table, &c_table));
     }
 }
