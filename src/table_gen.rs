@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_o_table_size() {
-        let reference = string_to_ints("ACGT$");
+        let reference = string_to_ints("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
         let sa = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &sa);
         let (rows, cols) = o_table.shape();
@@ -68,6 +68,7 @@ mod tests {
     }
 
     #[bench]
+    #[ignore = "slow"]
     fn bench_o_table_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = string_to_ints(&genome_string);
@@ -76,6 +77,7 @@ mod tests {
     }
 
     #[bench]
+    #[ignore = "slow"]
     fn bench_c_table_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = string_to_ints(&genome_string);

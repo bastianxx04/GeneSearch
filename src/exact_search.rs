@@ -113,6 +113,7 @@ mod tests {
     }
 
     #[bench]
+    #[ignore = "slow"]
     fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = string_to_ints(&genome_string);
