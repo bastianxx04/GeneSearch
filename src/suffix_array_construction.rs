@@ -25,20 +25,30 @@ pub fn suffix_array_induced_sort(reference: &Vec<usize>, alphabet_size: usize) -
     return
     */
     let n = reference.len();
-    let t = build_type_array(reference);
-    let lms_pointers = build_lms_array(&t);
+    let t = build_type_array(reference);        //build type map
+    let lms_pointers = build_lms_array(&t);    //get array of start positions of lms strings 
 
     let bucket_sizes = build_bucket_sizes(reference, alphabet_size);
-    let bucket_heads = find_bucket_heads(&bucket_sizes);
+    let bucket_heads = find_bucket_heads(&bucket_sizes);        //make all the bucket info
     let bucket_tails = find_bucket_tails(&bucket_sizes);
     
     let mut suffix_array = vec![usize::MAX; n];
-    place_lms(&mut suffix_array, reference, &lms_pointers, bucket_tails.clone());
-    induce_l_types(&mut suffix_array, reference, &t, bucket_heads.clone());
+    place_lms(&mut suffix_array, reference, &lms_pointers, bucket_tails.clone()); //Place all suffixes into approxemately the right position
+
+    induce_l_types(&mut suffix_array, reference, &t, bucket_heads.clone()); //Slot all the other suffixes into the guessed suffix array
     induce_s_types(&mut suffix_array, reference, &t, bucket_tails.clone());
     
-    let (reduced_string, new_alphabet_len) = reduce_reference_string(reference, &suffix_array, &lms_pointers, &bucket_tails, &t);
+    println!("suffix array: {:?}", suffix_array);
+    let (reduced_string, new_alphabet_len, offsets) = reduce_reference_string(reference, &suffix_array, &lms_pointers, &bucket_tails, &t);
+    
+    let summary_suffix_array = make_summary_suffix_array(&reduced_string, new_alphabet_len);
+    
+    let mut result = accurate_lms_sort(&reference, bucket_tails.clone(), &t, &summary_suffix_array, &offsets);
 
+    induce_l_types(&mut result, reference, &t, bucket_heads.clone()); //Slot all the other suffixes into the guessed suffix array
+    induce_s_types(&mut result, reference, &t, bucket_tails.clone());
+
+    /*
     let mut buckets = Vec::new();
     let mut sa1 = Vec::new();
     for i in lms_pointers {
@@ -53,7 +63,46 @@ pub fn suffix_array_induced_sort(reference: &Vec<usize>, alphabet_size: usize) -
     
     // TODO: Induce SA from SA1
     println!("sa1: {:?}",sa1);
-    suffix_array
+    */
+
+    result
+}
+
+fn accurate_lms_sort(reference: &Vec<usize>, mut bucket_tails: Vec<usize>, t: &Vec<bool>, summary_suffix_array: &Vec<usize>, offsets: &Vec<usize>) -> Vec<usize> {
+    let mut suffix_offsets = vec![usize::MAX; reference.len() + 1];
+
+    for i in (0..summary_suffix_array.len()).rev() { //maybe a off by one here? find out later.
+        let string_index = offsets[summary_suffix_array[i]];
+
+        let bucket_index = reference[string_index];
+
+        suffix_offsets[bucket_tails[bucket_index]] = string_index;
+
+        bucket_tails[bucket_index] -= 1;
+    }
+
+    suffix_offsets[0] = reference.len();
+
+    suffix_offsets
+}
+
+fn make_summary_suffix_array(reduced_string: &Vec<usize>, alphabet_size: usize) -> Vec<usize> {
+    let mut summary_suffix_array = Vec::new();
+
+    if alphabet_size == reduced_string.len(){
+        summary_suffix_array = vec![usize::MAX; reduced_string.len() + 1];
+
+        summary_suffix_array[0] = reduced_string.len();
+
+        for i in 0..reduced_string.len(){
+            summary_suffix_array[reduced_string[i]+1] = i
+        }
+
+    } else {
+        println!("ENTERED RECURSION WITH REDUCED STRING {:?} ALPHABET SIZE {}", reduced_string, alphabet_size);
+        summary_suffix_array = suffix_array_induced_sort(reduced_string, alphabet_size);
+    }
+    summary_suffix_array
 }
 
 fn find_bucket(bucket_tails: &Vec<usize>, i: usize) -> usize {
@@ -172,39 +221,46 @@ fn induce_s_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool
     }
 }
 
-fn reduce_reference_string(reference: &[usize], suffix_array: &SuffixArray, lms_pointers: &[usize], bucket_tails: &Vec<usize>, t: &[bool]) -> (Vec<usize>, usize) {
+fn reduce_reference_string(reference: &[usize], suffix_array: &SuffixArray, lms_pointers: &[usize], bucket_tails: &Vec<usize>, t: &[bool]) -> (Vec<usize>, usize, Vec<usize>) {
     let n = reference.len();
-    let mut names_buf = vec![usize::MAX; n + 1];
-    let mut name = 0;
-    let mut reduced_string = Vec::new();
+    let mut lms_names = vec![usize::MAX; n + 1];
+    let mut current_name = 0;
+    let mut last_lms_suffix_offset = usize::MAX;
 
-    names_buf[suffix_array[0]] = name;
+    lms_names[suffix_array[0]] = current_name;
     let mut prev_lms_substring = suffix_array[0];
 
     for i in 1..(n) {
-        let j = suffix_array[i];
+        let suffix_offset = suffix_array[i];
 
-        if !lms_pointers.contains(&j) {
+        if !lms_pointers.contains(&suffix_offset) { //We only case about lms suffixes
             continue;
         }
 
-        if !compare_lms(reference, t, lms_pointers, prev_lms_substring, j) {
-            name += 1;
+        if !compare_lms(reference, t, lms_pointers, prev_lms_substring, suffix_offset) {    //if this lms suffix starts with a different lms substring from the last one, we give it a new current_name
+            current_name += 1;
         }
-        prev_lms_substring = j;
-        names_buf[j] = name;
+
+        prev_lms_substring = suffix_offset;
+        lms_names[suffix_offset] = current_name;
     }
 
-    let new_alphabet_size = name+1;
-    
-    for i in 0..(n+1) {
-        name = names_buf[i];
-        if name == usize::MAX {continue;}
-        reduced_string.push(name);
+
+    let mut offsets = Vec::new();
+    let mut reduced_string = Vec::new();
+    for i in 0..lms_names.len() {
+        let name = lms_names[i];
+        if name == usize::MAX {
+            continue;
+        }
+        offsets.push(i);
+        reduced_string.push(current_name);
     }
-    
+
+    let new_alphabet_size = current_name+1;
+
     println!("reduced ref string: {:?}", reduced_string);
-    (reduced_string, new_alphabet_size)
+    (reduced_string, new_alphabet_size, offsets)
 }
 
 fn compare_lms(reference: &[usize], t: &[bool], lms_pointers: &[usize], i: usize, j: usize) -> bool {
