@@ -1,29 +1,9 @@
-use std::usize;
 use crate::types::SuffixArray;
-use crate::ALPHABET;
-
+use std::usize;
 
 /// SA-IS
 #[allow(dead_code)]
 pub fn suffix_array_induced_sort(reference: &Vec<usize>, alphabet_size: usize) -> SuffixArray {
-    /*
-    t: array [0..n − 1] of boolean;
-    P1: array [0..n_1 − 1] of integer;
-    S1: array [0..n_1 − 1] of integer;
-    B: array [0..∥Σ(S)∥ − 1] of integer;
-
-    Scan S once to classify all the characters as L- or S-type into t;
-    Scan t once to find all the LMS-substrings in S into P1;
-    Induced sort all the LMS-substrings using P1 and B;
-    Name each LMS-substring in S by its bucket index to get a new shortened string S1;
-    if Each character in S1 is unique
-        then
-            Directly compute SA1 from S1;
-        else
-            SA-IS(S1, SA1); � where recursive call happens
-    Induce SA from SA1;
-    return
-    */
     let n = reference.len();
     let t = build_type_array(reference);
     let lms_pointers = build_lms_array(&t);
@@ -31,13 +11,19 @@ pub fn suffix_array_induced_sort(reference: &Vec<usize>, alphabet_size: usize) -
     let bucket_sizes = build_bucket_sizes(reference, alphabet_size);
     let bucket_heads = find_bucket_heads(&bucket_sizes);
     let bucket_tails = find_bucket_tails(&bucket_sizes);
-    
+
     let mut suffix_array = vec![usize::MAX; n];
-    place_lms(&mut suffix_array, reference, &lms_pointers, bucket_tails.clone());
+    place_lms(
+        &mut suffix_array,
+        reference,
+        &lms_pointers,
+        bucket_tails.clone(),
+    );
     induce_l_types(&mut suffix_array, reference, &t, bucket_heads.clone());
     induce_s_types(&mut suffix_array, reference, &t, bucket_tails.clone());
-    
-    let (reduced_string, new_alphabet_len) = reduce_reference_string(reference, &suffix_array, &lms_pointers, &bucket_tails, &t);
+
+    let (reduced_string, new_alphabet_len) =
+        reduce_reference_string(reference, &suffix_array, &lms_pointers, &t);
 
     let mut buckets = Vec::new();
     let mut sa1 = Vec::new();
@@ -50,9 +36,9 @@ pub fn suffix_array_induced_sort(reference: &Vec<usize>, alphabet_size: usize) -
             buckets.push(bucket);
         }
     }
-    
+
     // TODO: Induce SA from SA1
-    println!("sa1: {:?}",sa1);
+    println!("sa1: {:?}", sa1);
     suffix_array
 }
 
@@ -63,7 +49,7 @@ fn find_bucket(bucket_tails: &Vec<usize>, i: usize) -> usize {
     }
 }
 
-fn build_type_array(reference: &Vec<usize>) -> Vec<bool> { 
+fn build_type_array(reference: &Vec<usize>) -> Vec<bool> {
     let n = reference.len();
     let mut type_map = vec![false; n];
     type_map[n - 1] = true;
@@ -129,15 +115,25 @@ fn find_bucket_tails(buckets: &[usize]) -> Vec<usize> {
     result
 }
 
-fn place_lms(suffix_array: &mut SuffixArray, reference: &[usize], lms_pointers: &[usize], mut bucket_tails: Vec<usize>) {
+fn place_lms(
+    suffix_array: &mut SuffixArray,
+    reference: &[usize],
+    lms_pointers: &[usize],
+    mut bucket_tails: Vec<usize>,
+) {
     for &i in lms_pointers {
-        let c = reference[i] as usize;
+        let c = reference[i];
         suffix_array[bucket_tails[c] - 1] = i;
         bucket_tails[c] -= 1;
     }
 }
 
-fn induce_l_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool], mut bucket_heads: Vec<usize>) {
+fn induce_l_types(
+    suffix_array: &mut SuffixArray,
+    reference: &[usize],
+    t: &[bool],
+    mut bucket_heads: Vec<usize>,
+) {
     // STEP 2 (it's about to get crazy)
     let n = reference.len();
     for i in 0..n {
@@ -146,7 +142,7 @@ fn induce_l_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool
         }
 
         let j = suffix_array[i] - 1;
-        
+
         if !t[j] {
             let c = reference[j] as usize;
             suffix_array[bucket_heads[c] - 1] = j;
@@ -155,7 +151,12 @@ fn induce_l_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool
     }
 }
 
-fn induce_s_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool], mut bucket_tails: Vec<usize>) {
+fn induce_s_types(
+    suffix_array: &mut SuffixArray,
+    reference: &[usize],
+    t: &[bool],
+    mut bucket_tails: Vec<usize>,
+) {
     // STEP 3 (the one where the magic happens)
     let n = reference.len();
     for i in (0..n).rev() {
@@ -172,7 +173,12 @@ fn induce_s_types(suffix_array: &mut SuffixArray, reference: &[usize], t: &[bool
     }
 }
 
-fn reduce_reference_string(reference: &[usize], suffix_array: &SuffixArray, lms_pointers: &[usize], bucket_tails: &Vec<usize>, t: &[bool]) -> (Vec<usize>, usize) {
+fn reduce_reference_string(
+    reference: &[usize],
+    suffix_array: &SuffixArray,
+    lms_pointers: &[usize],
+    t: &[bool],
+) -> (Vec<usize>, usize) {
     let n = reference.len();
     let mut names_buf = vec![usize::MAX; n + 1];
     let mut name = 0;
@@ -195,36 +201,44 @@ fn reduce_reference_string(reference: &[usize], suffix_array: &SuffixArray, lms_
         names_buf[j] = name;
     }
 
-    let new_alphabet_size = name+1;
-    
-    for i in 0..(n+1) {
+    let new_alphabet_size = name + 1;
+
+    for i in 0..(n + 1) {
         name = names_buf[i];
-        if name == usize::MAX {continue;}
+        if name == usize::MAX {
+            continue;
+        }
         reduced_string.push(name);
     }
-    
+
     println!("reduced ref string: {:?}", reduced_string);
     (reduced_string, new_alphabet_size)
 }
 
-fn compare_lms(reference: &[usize], t: &[bool], lms_pointers: &[usize], i: usize, j: usize) -> bool {
+fn compare_lms(
+    reference: &[usize],
+    t: &[bool],
+    lms_pointers: &[usize],
+    i: usize,
+    j: usize,
+) -> bool {
     if i == j {
-        return true
+        return true;
     }
 
     let n = reference.len();
     if i == n - 1 || j == n - 1 {
-        return false
+        return false;
     }
-    
+
     let mut k = 0;
     loop {
         if k > 0 && lms_pointers.contains(&(i + k)) && lms_pointers.contains(&(j + k)) {
-            return true
+            return true;
         }
 
         if reference[i + k] != reference[j + k] || t[i + k] != t[j + k] {
-            return false
+            return false;
         }
 
         k += 1;
@@ -251,34 +265,39 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{read_genome, util::string_to_ints, HG38_1000_PATH};
+    use crate::{read_genome, util::remap_string, ALPHABET, HG38_1000_PATH};
 
     use super::*;
     use test::Bencher;
 
+    const GEN60: &str = "AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGG$";
+
     #[test]
     fn test_type_map() {
-        let reference = string_to_ints("ACATGA$");
-        let t = build_type_array(&reference.iter().map(|&a| a as usize).collect());
+        let reference = remap_string("ACATGA$");
+        let t = build_type_array(&reference);
         assert_eq!(vec![true, false, true, false, false, false, true], t);
     }
 
     #[test]
     fn test_sais_mmiissiissiippii() {
-        let reference = string_to_ints("CCAATTAATTAAGGAA$");
-        let sa = suffix_array_induced_sort(&reference.iter().map(|&a| a as usize).collect(), ALPHABET.len());
-        assert_eq!(vec![16, 15, 14, 10, 6, 2, 11, 7, 3, 1, 0, 13, 12, 9, 5, 8, 4], sa);
+        let reference = remap_string("CCAATTAATTAAGGAA$");
+        let sa = suffix_array_induced_sort(&reference, ALPHABET.len());
+        assert_eq!(
+            vec![16, 15, 14, 10, 6, 2, 11, 7, 3, 1, 0, 13, 12, 9, 5, 8, 4],
+            sa
+        );
     }
 
     #[test]
     fn test_sais_compare_naive() {
-        let genome_string = "AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGG$";
-        let genome = string_to_ints(&genome_string);
-        let naive = construct_suffix_array_naive(&genome);
-        let sais = suffix_array_induced_sort(&genome.iter().map(|&a| a as usize).collect(), ALPHABET.len());
+        let genome_u8 = remap_string(GEN60);
+        let naive = construct_suffix_array_naive(&genome_u8);
+        let genome_usize = genome_u8.iter().map(|&c| c as usize).collect();
+        let sais = suffix_array_induced_sort(&genome_usize, ALPHABET.len());
         for i in 0..sais.len() {
             if sais[i] != naive[i] {
-                let print = &genome[sais[i]..];
+                let print = &genome_usize[sais[i]..];
                 println!("{}: {:?}, ", i, print);
             }
         }
@@ -289,7 +308,7 @@ mod tests {
     #[ignore = "slow"]
     fn bench_sa_naive_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = string_to_ints(&genome_string);
+        let genome = remap_string(&genome_string);
         b.iter(|| construct_suffix_array_naive(&genome))
     }
 
@@ -297,7 +316,7 @@ mod tests {
     #[ignore = "slow"]
     fn bench_sais_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = string_to_ints(&genome_string);
-        b.iter(|| suffix_array_induced_sort(&genome.iter().map(|&a| a as usize).collect(), ALPHABET.len()))
+        let genome = remap_string(&genome_string);
+        b.iter(|| suffix_array_induced_sort(&genome, ALPHABET.len()))
     }
 }

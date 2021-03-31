@@ -48,17 +48,17 @@ mod tests {
     use super::*;
     use crate::{
         construct_suffix_array_naive, generate_c_table, generate_o_table, read_genome,
-        string_to_ints, HG38_1000_PATH,
+        remap_string, HG38_1000_PATH,
     };
     use test::Bencher;
 
     #[test]
     fn test_bwt_search_1_match() {
-        let reference = string_to_ints("CATTGA$");
+        let reference = remap_string("CATTGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("ATT");
+        let search_string = remap_string("ATT");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 2), search_result);
@@ -66,11 +66,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_banana() {
-        let reference = string_to_ints("CAGAGA$");
+        let reference = remap_string("CAGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("AGA");
+        let search_string = remap_string("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
@@ -78,11 +78,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_2_matches() {
-        let reference = string_to_ints("AGAGA$");
+        let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("AGA");
+        let search_string = remap_string("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
@@ -90,11 +90,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_0_matches() {
-        let reference = string_to_ints("AGAGA$");
+        let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("ACA");
+        let search_string = remap_string("ACA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
@@ -102,11 +102,11 @@ mod tests {
 
     #[test]
     fn test_bwt_search_query_longer_than_reference() {
-        let reference = string_to_ints("AGAGA$");
+        let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
-        let search_string = string_to_ints("ACAAGAGAGA");
+        let search_string = remap_string("ACAAGAGAGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
@@ -116,11 +116,11 @@ mod tests {
     #[ignore = "slow"]
     fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = string_to_ints(&genome_string);
+        let genome = remap_string(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
         let o_table = generate_o_table(&genome, &suffix_array);
         let c_table = generate_c_table(&genome);
-        let query = string_to_ints("CTCCATCATGTCTTATGGCG");
+        let query = remap_string("CTCCATCATGTCTTATGGCG");
         b.iter(|| bwt_search(&query, &o_table, &c_table));
     }
 }

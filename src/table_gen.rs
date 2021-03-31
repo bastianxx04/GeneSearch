@@ -54,12 +54,12 @@ pub fn generate_c_table(reference: &[u8]) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{construct_suffix_array_naive, read_genome, string_to_ints, HG38_1000_PATH};
+    use crate::{construct_suffix_array_naive, read_genome, remap_string, HG38_1000_PATH};
     use test::Bencher;
 
     #[test]
     fn test_o_table_size() {
-        let reference = string_to_ints("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
+        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
         let sa = construct_suffix_array_naive(&reference);
         let o_table = generate_o_table(&reference, &sa);
         let (rows, cols) = o_table.shape();
@@ -71,7 +71,7 @@ mod tests {
     #[ignore = "slow"]
     fn bench_o_table_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = string_to_ints(&genome_string);
+        let genome = remap_string(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
         b.iter(|| generate_o_table(&genome, &suffix_array));
     }
@@ -80,7 +80,7 @@ mod tests {
     #[ignore = "slow"]
     fn bench_c_table_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = string_to_ints(&genome_string);
+        let genome = remap_string(&genome_string);
         b.iter(|| generate_c_table(&genome));
     }
 }

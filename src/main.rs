@@ -64,7 +64,7 @@ pub fn log_performance() -> std::io::Result<()> {
     let genome_string = read_genome(HG38_1000_PATH)?;
 
     // Run the algs
-    let genome = string_to_ints(&genome_string);
+    let genome = remap_string(&genome_string);
 
     // Initialize suffix array, O-table, and C-table
     let suff_and_table_start = Instant::now();
@@ -78,7 +78,7 @@ pub fn log_performance() -> std::io::Result<()> {
     println!("Finished generating tables...");
 
     let search_string_ints =
-        string_to_ints("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
+        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
 
     //search with bwt exact search
     let exact_time_start = Instant::now();

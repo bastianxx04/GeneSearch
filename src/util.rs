@@ -1,9 +1,13 @@
 use crate::ALPHABET;
+use num::{NumCast, Unsigned};
 
-pub fn string_to_ints(s: &str) -> Vec<u8> {
+pub fn remap_string<T: Unsigned + NumCast>(s: &str) -> Vec<T> {
     s.chars()
         .flat_map(|c| ALPHABET.iter().position(|a| a == &c))
-        .map(|c| c as u8)
+        .map(|c| match num::cast(c) {
+            Some(v) => v,
+            None => panic!("could not "),
+        })
         .collect()
 }
 

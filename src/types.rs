@@ -74,7 +74,7 @@ impl<'a> Display for OTable<'a> {
             let c = ALPHABET[j as usize];
             write!(f, "{:>3}", c)?;
         }
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         // Data rows
         for (i, c) in ALPHABET.iter().enumerate() {
@@ -83,7 +83,7 @@ impl<'a> Display for OTable<'a> {
                 let v = self.get(i as u8, j);
                 write!(f, "{:>3}", v)?;
             }
-            writeln!(f, )?;
+            writeln!(f,)?;
         }
 
         Ok(())
@@ -94,13 +94,13 @@ pub type DTable = Vec<usize>;
 
 #[cfg(test)]
 mod tests {
-    use crate::{suffix_array_construction::construct_suffix_array_naive, util::string_to_ints};
+    use crate::{suffix_array_construction::construct_suffix_array_naive, util::remap_string};
 
     use super::OTable;
 
     #[test]
     fn test_1() {
-        let reference = string_to_ints("ACG$");
+        let reference = remap_string("ACG$");
         let suffix_array = construct_suffix_array_naive(&reference);
         let mut o_table = OTable::new(&reference, &suffix_array);
         o_table.set(2, 3, 1);
