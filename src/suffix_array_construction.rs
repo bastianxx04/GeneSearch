@@ -330,6 +330,14 @@ mod tests {
     }
 
     #[test]
+    fn test_sais_cacag() {
+        // CACAG isn't instantly turned into a suffix array by the first induced sort
+        let reference = remap_string("CACAG$");
+        let sa = suffix_array_induced_sort(&reference, ALPHABET.len());
+        assert_eq!(vec![5, 1, 3, 0, 2, 4], sa);
+    }
+
+    #[test]
     fn test_sais_compare_naive_mmiissiissiippii() {
         let genome_u8 = remap_string("CCAATTAATTAAGGAA$");
         let naive = construct_suffix_array_naive(&genome_u8);
