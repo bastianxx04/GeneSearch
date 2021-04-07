@@ -355,7 +355,6 @@ mod tests {
     }
 
     #[bench]
-    #[ignore = "slow"]
     fn bench_sais_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = remap_string(&genome_string);
