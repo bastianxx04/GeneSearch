@@ -12,8 +12,8 @@ pub fn bwt_search(query: &[u8], o_table: &OTable, c_table: &[usize]) -> (usize, 
     let mut end = cols - 1;
 
     for &a in query.iter().rev() {
-        start = c_table[a as usize] + o_table[(a, start)];
-        end = c_table[a as usize] + o_table[(a, end)];
+        start = c_table[a as usize] + o_table.get(a, start);
+        end = c_table[a as usize] + o_table.get(a, end);
     }
 
     (start, end - 1)
@@ -47,7 +47,7 @@ pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]
 mod tests {
     use super::*;
     use crate::{
-        construct_suffix_array_naive, generate_c_table, generate_o_table, read_genome,
+        construct_suffix_array_naive, generate_c_table, read_genome,
         remap_string, HG38_1000_PATH,
     };
     use test::Bencher;
@@ -56,7 +56,7 @@ mod tests {
     fn test_bwt_search_1_match() {
         let reference = remap_string("CATTGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &suffix_array);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let search_string = remap_string("ATT");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
@@ -68,7 +68,7 @@ mod tests {
     fn test_bwt_search_banana() {
         let reference = remap_string("CAGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &suffix_array);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let search_string = remap_string("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
@@ -80,7 +80,7 @@ mod tests {
     fn test_bwt_search_2_matches() {
         let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &suffix_array);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let search_string = remap_string("AGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
@@ -92,7 +92,7 @@ mod tests {
     fn test_bwt_search_0_matches() {
         let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &suffix_array);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let search_string = remap_string("ACA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
@@ -104,7 +104,7 @@ mod tests {
     fn test_bwt_search_query_longer_than_reference() {
         let reference = remap_string("AGAGA$");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &suffix_array);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let search_string = remap_string("ACAAGAGAGA");
         let search_result = bwt_search(&search_string, &o_table, &c_table);
@@ -117,7 +117,7 @@ mod tests {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = remap_string(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
-        let o_table = generate_o_table(&genome, &suffix_array);
+        let o_table = OTable::new(&genome, &suffix_array);
         let c_table = generate_c_table(&genome);
         let query = remap_string("CTCCATCATGTCTTATGGCG");
         b.iter(|| bwt_search(&query, &o_table, &c_table));

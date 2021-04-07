@@ -12,6 +12,7 @@ mod o_table;
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
 use exact_search::bwt_search;
+use o_table::OTable;
 use std::{
     fs::{create_dir, File},
     io::{BufReader, Read, Write},
@@ -19,7 +20,7 @@ use std::{
     time::Instant,
 };
 use suffix_array_construction::{suffix_array_induced_sort, construct_suffix_array_naive};
-use table_gen::{generate_c_table, generate_o_table};
+use table_gen::{generate_c_table};
 use types::*;
 use util::*;
 
@@ -72,7 +73,7 @@ pub fn log_performance() -> std::io::Result<()> {
 
     let suffix_array = suffix_array_induced_sort(&genome);
 
-    let o_table = generate_o_table(&genome, &suffix_array);
+    let o_table = OTable::new(&genome, &suffix_array);
     let c_table = generate_c_table(&genome);
 
     let suff_and_table_time = suff_and_table_start.elapsed().as_nanos();
@@ -100,7 +101,7 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
     let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
-    let reverse_o_table = generate_o_table(&reverse_genome, &reverse_suffix_array);
+    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array);
 
     let params = ApproxSearchParams {
         reference: &genome,

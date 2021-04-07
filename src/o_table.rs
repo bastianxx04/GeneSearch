@@ -1,66 +1,103 @@
 use crate::{bwt, ALPHABET};
 use std::fmt::{Display, Formatter};
-use std::ops::{Index, IndexMut};
 
 pub struct OTable<'a> {
     array: Vec<usize>,
+    spacing: usize,
     string: &'a [u8],
     suffix_array: &'a [usize],
 }
 
 impl<'a> OTable<'a> {
+    /// Allocate and generate an O-table.
     pub fn new(string: &'a [u8], suffix_array: &'a [usize]) -> Self {
-        let array_len = (string.len() + 1) * ALPHABET.len();
-        OTable {
+        let spacing = 10;
+        let array_len = ((string.len() / spacing) + 1) * ALPHABET.len();
+        let mut o_table = OTable {
             array: vec![0; array_len],
+            spacing,
             string,
             suffix_array,
+        };
+
+        // Fill O-table
+        let (_, cols) = o_table.shape();
+        let mut counter = vec![0; 5];
+        for i in 1..cols {
+            counter[bwt(o_table.string, o_table.suffix_array, i - 1) as usize] += 1;
+            if i % spacing == 0 {
+                for (a, &c) in counter.iter().enumerate() {
+                    o_table.set(a as u8, i, c);
+                }
+            }
         }
+
+        o_table
     }
 
-    fn calc_index(&self, a: u8, i: usize) -> Option<usize> {
+    /// Calculates the index into the internal array.
+    /// Returns a two values:
+    /// - the first is the index into the internal array
+    /// - the second is the remaining lines to count the character in
+    fn calc_index(&self, a: u8, i: usize) -> (usize, usize) {
         let a = a as usize;
         let (rows, cols) = self.shape();
-        if a < rows && i < cols {
-            Some(a * (self.string.len() + 1) + i)
-        } else {
-            None
+
+        if a >= rows || i >= cols {
+            panic!(
+                "Index out of bounds ({}, {}) for shape ({}, {})",
+                a, i, rows, cols,
+            )
         }
+        let offset = (self.array.len() / ALPHABET.len()) * a;
+    
+        (offset + i / self.spacing, i % self.spacing)
     }
 
     pub fn shape(&self) -> (usize, usize) {
         (ALPHABET.len(), self.string.len() + 1)
     }
-}
 
-impl Index<(u8, usize)> for OTable<'_> {
-    type Output = usize;
+    fn find_count(&self, from: usize, to: usize, character: u8) -> usize {
+        let mut count = 0;
+        println!("from {} to {}", from, to);
+        // println!("{:?}", self.suffix_array);
+        // println!("{:?}", (0..self.suffix_array.len()).map(|i| bwt(self.string, self.suffix_array, i)).collect::<Vec<u8>>());
+        // println!("{:?}", (0..self.suffix_array.len()).map(|i| bwt(self.string, self.suffix_array, i)).collect::<Vec<u8>>().iter().take(to).skip(from).map(|&n| n).collect::<Vec<u8>>());
+        /*
+        for i in from..to {
+            
+        }
+        */
+        for i in (from + 1)..to {
+            if character == bwt(self.string, self.suffix_array, (i % self.string.len()) ) {
+                count += 1;
+            }
+        }
+        count
+    }
 
-    fn index(&self, index: (u8, usize)) -> &usize {
-        let (a, i) = index;
+    pub fn get(&self, a: u8, i: usize) -> usize {
+        /*
+        i = 43
+        a, 4 og så regne frem
+        hvis i % 10 == 0, så gør som normalt i / 10
+        ellers fra i / 10 op til 43
+        tag tallet på (a, i / 10) og så læg tallene i - (i % 10)..(i) 40..43 i reference
+        returner
+        */
         match self.calc_index(a, i) {
-            Some(idx) => &self.array[idx],
-            None => panic!(
-                "GET index out of bounds ({}, {}) for shape {:?}",
-                a,
-                i,
-                self.shape()
-            ),
+            (idx, 0) => self.array[idx],
+            (idx, j) => {
+                self.array[idx] + self.find_count(idx * self.spacing, (idx * self.spacing) + j, a)
+            }
         }
     }
-}
 
-impl IndexMut<(u8, usize)> for OTable<'_> {
-    fn index_mut(&mut self, index: (u8, usize)) -> &mut usize {
-        let (a, i) = index;
+    fn set(&mut self, a: u8, i: usize, v: usize) {
         match self.calc_index(a, i) {
-            Some(idx) => self.array.get_mut(idx).expect("index was out of bounds"),
-            None => panic!(
-                "SET index out of bounds ({}, {}) for shape {:?}",
-                a,
-                i,
-                self.shape()
-            ),
+            (idx, 0) => self.array[idx] = v,
+            _ => todo!(),
         }
     }
 }
@@ -82,7 +119,7 @@ impl<'a> Display for OTable<'a> {
         for (i, c) in ALPHABET.iter().enumerate() {
             write!(f, "{:>3}", c)?;
             for j in 0..(self.string.len() + 1) {
-                write!(f, "{:>3}", self[(i as u8, j)])?;
+                write!(f, "{:>3}", self.get(i as u8, j))?;
             }
             writeln!(f,)?;
         }
@@ -93,16 +130,64 @@ impl<'a> Display for OTable<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{suffix_array_construction::suffix_array_induced_sort, util::remap_string};
-
     use super::OTable;
+    use crate::{
+        read_genome, suffix_array_construction::suffix_array_induced_sort, util::remap_string,
+        ALPHABET, HG38_1000_PATH,
+    };
+    use test::Bencher;
 
     #[test]
-    fn test_1() {
-        let reference = remap_string("ACG$");
-        let suffix_array = suffix_array_induced_sort(&reference);
-        let mut o_table = OTable::new(&reference, &suffix_array);
-        o_table[(2, 3)] = 1;
+    fn test_o_table_shape() {
+        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
+        let sa = suffix_array_induced_sort(&reference);
+        let o_table = OTable::new(&reference, &sa);
+        let (rows, cols) = o_table.shape();
+        assert_eq!(rows, ALPHABET.len());
+        assert_eq!(cols, reference.len() + 1);
+    }
+
+    #[test]
+    fn test_o_table_calc_index() {
+        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
+        let sa = suffix_array_induced_sort(&reference);
+        let o_table = OTable::new(&reference, &sa);
+        
+        assert_eq!(o_table.calc_index(2, 10), (9, 0));
+        assert_eq!(o_table.calc_index(2, 11), (9, 1));
+        assert_eq!(o_table.calc_index(0, 0), (0, 0));
+        assert_eq!(o_table.calc_index(0, 5), (0, 5));
+    }
+
+    #[test]
+    fn test_o_table_get() {
+        /* Full O-table for ACGTATCGTGACGGGCTATAGCGATGTCGATGC$
+            0                             10                            20                            30          
+               C  G  $  T  T  T  G  G  G  T  G  A  A  T  G  T  C  C  T  A  G  G  C  C  T  C  A  C  G  G  A  G  A  A
+        $ | 0  0  0  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+        A | 0  0  0  0  0  0  0  0  0  0  0  0  1  2  2  2  2  2  2  2  3  3  3  3  3  3  3  4  4  4  4  5  5  6  7
+        C | 0  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  2  3  3  3  3  3  4  5  5  6  6  7  7  7  7  7  7  7
+        G | 0  0  1  1  1  1  1  2  3  4  4  5  5  5  5  6  6  6  6  6  6  7  8  8  8  8  8  8  8  9 10 10 11 11 11
+        T | 0  0  0  0  1  2  3  3  3  3  4  4  4  4  5  5  6  6  6  7  7  7  7  7  7  8  8  8  8  8  8  8  8  8  8
+        */
+        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
+        let sa = suffix_array_induced_sort(&reference);
+        let o_table = OTable::new(&reference, &sa);
         println!("{}", o_table);
+        assert_eq!(o_table.get(2, 1), 1);
+        assert_eq!(o_table.get(0, 3), 1);
+        assert_eq!(o_table.get(0, 34), 1);
+        assert_eq!(o_table.get(2, 13), 1);
+        assert_eq!(o_table.get(3, 13), 5);
+        assert_eq!(o_table.get(1, 30), 4);
+        assert!(false);
+    }
+
+    #[bench]
+    fn bench_o_table_ref1000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome = remap_string(&genome_string);
+        let suffix_array = suffix_array_induced_sort(&genome);
+        b.iter(|| OTable::new(&genome, &suffix_array));
     }
 }

@@ -1,25 +1,5 @@
-use crate::o_table::OTable;
 use crate::util::bwt;
 use crate::ALPHABET;
-
-/// Generate an O-table. Inspired by "String Algorithms in C"
-pub fn generate_o_table<'a>(reference: &'a [u8], suffix_array: &'a [usize]) -> OTable<'a> {
-    let mut o_table = OTable::new(&reference, &suffix_array);
-
-    let (rows, cols) = o_table.shape();
-
-    for a in 0..(rows as u8) {
-        for i in 1..cols {
-            if bwt(&reference, &suffix_array, i - 1) == a {
-                o_table[(a, i)] = o_table[(a, i - 1)] + 1;
-            } else {
-                o_table[(a, i)] = o_table[(a, i - 1)];
-            }
-        }
-    }
-
-    o_table
-}
 
 #[allow(dead_code)]
 fn generate_o_table_naive(reference: &[u8], suffix_array: &[usize]) -> Vec<Vec<usize>> {
@@ -54,26 +34,8 @@ pub fn generate_c_table(reference: &[u8]) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{construct_suffix_array_naive, read_genome, remap_string, HG38_1000_PATH};
+    use crate::{read_genome, remap_string, HG38_1000_PATH};
     use test::Bencher;
-
-    #[test]
-    fn test_o_table_size() {
-        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
-        let sa = construct_suffix_array_naive(&reference);
-        let o_table = generate_o_table(&reference, &sa);
-        let (rows, cols) = o_table.shape();
-        assert_eq!(rows, ALPHABET.len());
-        assert_eq!(cols, reference.len() + 1);
-    }
-
-    #[bench]
-    fn bench_o_table_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = remap_string(&genome_string);
-        let suffix_array = construct_suffix_array_naive(&genome);
-        b.iter(|| generate_o_table(&genome, &suffix_array));
-    }
 
     #[bench]
     fn bench_c_table_ref1000(b: &mut Bencher) {
