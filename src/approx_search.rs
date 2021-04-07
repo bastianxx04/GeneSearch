@@ -1,6 +1,7 @@
 use crate::DTable;
 use crate::ALPHABET;
-use crate::{types::OTable, CTable};
+use crate::types::CTable;
+use crate::o_table::OTable;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
@@ -25,6 +26,13 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
     let o_table = params.o_table;
     let c_table = params.c_table;
 
+    let inner_params = InexactRecursionParams {
+        query: params.query,
+        d_table: &d_table,
+        o_table,
+        c_table,
+    };
+
     let left = 0;
     let right = params.reference.len();
     let i = (params.query.len() - 1) as i32;
@@ -32,9 +40,9 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
     let mut result = HashSet::new();
 
     // M-operations
-    for a in 1..ALPHABET.len() {
-        let new_left = c_table[a] + o_table.get(a as u8, left);
-        let new_right = c_table[a] + o_table.get(a as u8, right);
+    for (a, symbol_index) in c_table.iter().enumerate().skip(1) {
+        let new_left = symbol_index + o_table[(a as u8, left)];
+        let new_right = symbol_index + o_table[(a as u8, right)];
 
         let edit_cost: i32 = if a == params.query[i as usize].into() {
             0
@@ -51,14 +59,11 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
 
         result = result
             .union(&inexact_recursion(
-                params.query,
+                &inner_params,
                 i - 1,
                 edits_left,
                 new_left,
                 new_right,
-                &d_table,
-                o_table,
-                c_table,
                 String::from(if edit_cost == 0 { "M" } else { "S" }),
                 edit_cost as usize,
             ))
@@ -69,14 +74,11 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
     // I-operation
     result = result
         .union(&inexact_recursion(
-            params.query,
+            &inner_params,
             i - 1,
             (params.edits as i32) - 1,
             left,
             right,
-            &d_table,
-            o_table,
-            c_table,
             String::from("I"),
             1,
         ))
@@ -99,8 +101,8 @@ fn calculate_d_table(
 
     for c in query {
         let current_symbol = usize::from(*c);
-        start = c_table[current_symbol] + o_rev_table.get(current_symbol as u8, start - 1) + 1;
-        end = c_table[current_symbol] + o_rev_table.get(current_symbol as u8, end);
+        start = c_table[current_symbol] + o_rev_table[(current_symbol as u8, start - 1)] + 1;
+        end = c_table[current_symbol] + o_rev_table[(current_symbol as u8, end)];
         if start > end {
             start = 1;
             end = reference.len() - 1;
@@ -112,19 +114,25 @@ fn calculate_d_table(
     d_table
 }
 
+struct InexactRecursionParams<'a> {
+    query: &'a [u8],
+    o_table: &'a OTable<'a>,
+    c_table: &'a [usize],
+    d_table: &'a [usize],
+}
+
 fn inexact_recursion(
-    query: &[u8],
+    params: &InexactRecursionParams,
     i: i32,
     edits_left: i32,
     left: usize,
     right: usize,
-    d_table: &[usize],
-    o_table: &OTable,
-    c_table: &[usize],
     cigar: String,
     edits_total: usize,
 ) -> HashSet<(usize, usize, String, usize)> {
-    // println!("entered recursive loop at level: {}", i);
+
+    let InexactRecursionParams {query, o_table, c_table, d_table} = params;
+    
     let lower_limit = match usize::try_from(i) {
         Ok(value) => d_table[value],
         Err(_) => 0,
@@ -148,8 +156,8 @@ fn inexact_recursion(
 
     for c in 1..ALPHABET.len() {
         let c = c as u8;
-        new_left = c_table[c as usize] + o_table.get(c, left);
-        new_right = c_table[c as usize] + o_table.get(c, right);
+        new_left = c_table[c as usize] + o_table[(c, left)];
+        new_right = c_table[c as usize] + o_table[(c, right)];
         let edit_cost = if c == current_char { 0 } else { 1 };
 
         if (edits_left - edit_cost) < 0 {
@@ -161,14 +169,11 @@ fn inexact_recursion(
 
         result_set = result_set
             .union(&inexact_recursion(
-                query,
+                params,
                 i - 1,
                 edits_left - edit_cost,
                 new_left,
                 new_right,
-                d_table,
-                o_table,
-                c_table,
                 format!("{}{}", if edit_cost == 0 { "M" } else { "S" }, cigar),
                 edits_total + edit_cost as usize,
             ))
@@ -179,14 +184,11 @@ fn inexact_recursion(
     // Insertion operation
     result_set = result_set
         .union(&inexact_recursion(
-            query,
+            params,
             i - 1,
             edits_left - 1,
             left,
             right,
-            d_table,
-            o_table,
-            c_table,
             format!("{}{}", "I", cigar),
             edits_total + 1,
         ))
@@ -197,23 +199,20 @@ fn inexact_recursion(
     for c in 1..ALPHABET.len() {
         let c = c as u8;
 
-        new_left = c_table[c as usize] + o_table.get(c, left);
-        new_right = c_table[c as usize] + o_table.get(c, right);
+        new_left = c_table[c as usize] + o_table[(c, left)];
+        new_right = c_table[c as usize] + o_table[(c, right)];
 
         if left >= right {
             continue;
         };
-
+        
         result_set = result_set
             .union(&inexact_recursion(
-                query,
+                params,
                 i,
                 edits_left - 1,
                 new_left,
                 new_right,
-                d_table,
-                o_table,
-                c_table,
                 format!("{}{}", "D", cigar),
                 edits_total + 1,
             ))

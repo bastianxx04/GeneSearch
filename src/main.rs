@@ -7,6 +7,7 @@ mod suffix_array_construction;
 mod table_gen;
 mod types;
 mod util;
+mod o_table;
 
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
@@ -89,8 +90,8 @@ pub fn log_performance() -> std::io::Result<()> {
     println!("Finished exact search...");
 
     let mut exact_matches = vec![];
-    for i in exact_start..(exact_end + 1) {
-        exact_matches.push(suffix_array[i]);
+    for item in suffix_array.iter().take((exact_end) + 1).skip(exact_start) {
+        exact_matches.push(item);
     }
 
     //approx search
@@ -118,8 +119,8 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut approx_matches = vec![];
     for (start, end, cigar, edits) in approx_search_result.iter() {
         let mut indices = vec![];
-        for i in (*start)..(*end) {
-            indices.push(suffix_array[i]);
+        for item in suffix_array.iter().take(*end).skip(*start) {
+            indices.push(item);
         }
 
         let mut formatted_cigar = String::new();

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::suffix_array_construction::{find_bucket_heads, find_bucket_tails};
 use crate::ALPHABET;
 use num::{NumCast, Unsigned};
@@ -22,7 +24,6 @@ pub fn bwt(x: &[u8], sa: &[usize], i: usize) -> u8 {
 }
 
 // Gets the i'th row of BWM for x
-#[allow(dead_code)]
 pub fn bwm(x: &[u8], i: usize) -> String {
     let mut rows = vec![Vec::new(); x.len()];
     for j in 0..x.len() {
@@ -43,7 +44,7 @@ pub fn bwm(x: &[u8], i: usize) -> String {
     res
 }
 
-pub fn print_sais_buckets(suffix_array: &[usize], bucket_sizes: &Vec<usize>, i: usize) {
+pub fn print_sais_buckets(suffix_array: &[usize], bucket_sizes: &[usize], i: usize) {
     let bucket_heads = find_bucket_heads(&bucket_sizes);
     let bucket_tails = find_bucket_tails(&bucket_sizes);
 

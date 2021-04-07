@@ -1,4 +1,4 @@
-use crate::types::OTable;
+use crate::o_table::OTable;
 use crate::util::bwt;
 use crate::ALPHABET;
 
@@ -11,9 +11,9 @@ pub fn generate_o_table<'a>(reference: &'a [u8], suffix_array: &'a [usize]) -> O
     for a in 0..(rows as u8) {
         for i in 1..cols {
             if bwt(&reference, &suffix_array, i - 1) == a {
-                o_table.set(a, i, o_table.get(a, i - 1) + 1);
+                o_table[(a, i)] = o_table[(a, i - 1)] + 1;
             } else {
-                o_table.set(a, i, o_table.get(a, i - 1));
+                o_table[(a, i)] = o_table[(a, i - 1)];
             }
         }
     }

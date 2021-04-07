@@ -1,4 +1,4 @@
-use crate::types::OTable;
+use crate::o_table::OTable;
 use std::{
     cmp::{min, Ordering},
     usize,
@@ -12,8 +12,8 @@ pub fn bwt_search(query: &[u8], o_table: &OTable, c_table: &[usize]) -> (usize, 
     let mut end = cols - 1;
 
     for &a in query.iter().rev() {
-        start = c_table[a as usize] + o_table.get(a, start);
-        end = c_table[a as usize] + o_table.get(a, end);
+        start = c_table[a as usize] + o_table[(a, start)];
+        end = c_table[a as usize] + o_table[(a, end)];
     }
 
     (start, end - 1)
