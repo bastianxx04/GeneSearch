@@ -1,31 +1,19 @@
 use crate::types::SuffixArray;
 use crate::util::print_sais_buckets;
+use crate::ALPHABET;
 
 const UNDEFINED: usize = usize::MAX;
 
 /// SA-IS
 #[allow(dead_code)]
-pub fn suffix_array_induced_sort(reference: &Vec<u32>, alphabet_size: usize) -> SuffixArray {
-    println!("Entered the recursive function.");
-    println!(
-        "{:>3?} INDICES",
-        (0..reference.len()).collect::<Vec<usize>>()
-    );
-    println!("{:>3?} REFERENCE", reference);
+pub fn suffix_array_induced_sort(reference: &[u8]) -> SuffixArray {
+    let reference: Vec<u32> = reference.iter().map(|&n| n as u32).collect();
+    recursive_suff_arr_induce_sort(&reference, ALPHABET.len())
+}
 
+fn recursive_suff_arr_induce_sort(reference: &[u32], alphabet_size: usize) -> SuffixArray {
     let t = build_type_array(reference);
-    println!(
-        "{:?} TYPEMAP",
-        t.iter()
-            .map(|&b| if b { 'S' } else { 'L' })
-            .collect::<Vec<char>>()
-    );
-
     let p1 = build_lms_array(&t);
-    println!("{:?} LMS POINTERS", p1);
-
-    println!();
-
     let bucket_sizes = build_bucket_sizes(reference, alphabet_size);
 
     let mut suffix_array = vec![UNDEFINED; reference.len()];
@@ -37,6 +25,9 @@ pub fn suffix_array_induced_sort(reference: &Vec<u32>, alphabet_size: usize) -> 
         reduce_reference_string(reference, &suffix_array, &p1, &t);
 
     let reduced_sa = compute_reduced_suffix_array(&reduced_string, new_alphabet_size);
+
+    // Clear suffix array
+    suffix_array.fill(UNDEFINED);
 
     // Induce SA from SA1
     remap_lms(
@@ -50,11 +41,10 @@ pub fn suffix_array_induced_sort(reference: &Vec<u32>, alphabet_size: usize) -> 
     induce_l_types(reference, &mut suffix_array, &t, &bucket_sizes);
     induce_s_types(reference, &mut suffix_array, &t, &bucket_sizes);
 
-    println!("Exiting the recursive function.");
     suffix_array
 }
 
-fn build_type_array(reference: &Vec<u32>) -> Vec<bool> {
+fn build_type_array(reference: &[u32]) -> Vec<bool> {
     let n = reference.len();
     let mut type_map = vec![false; n];
     type_map[n - 1] = true;
@@ -141,7 +131,6 @@ fn induce_l_types(
     let mut bucket_heads = find_bucket_heads(bucket_sizes);
 
     for i in 0..reference.len() {
-        print_sais_buckets(&suffix_array, bucket_sizes, i);
 
         if suffix_array[i] == usize::MAX || suffix_array[i] == 0 {
             continue;
@@ -151,7 +140,8 @@ fn induce_l_types(
 
         if !t[j] {
             let c = reference[j] as usize;
-            suffix_array[bucket_heads[c]] = j;
+            let bucket_index = bucket_heads[c];
+            suffix_array[bucket_index] = j;
             bucket_heads[c] += 1;
         }
     }
@@ -219,7 +209,6 @@ fn reduce_reference_string(
         reduced_string.push(name as u32);
     }
 
-    println!("reduced ref string: {:?}", reduced_string);
     (reduced_string, reduced_offsets, new_alphabet_size)
 }
 
@@ -264,7 +253,7 @@ fn compute_reduced_suffix_array(reduced_string: &Vec<u32>, alphabet_size: usize)
         reduced_sa
     } else {
         // There are duplicates in the reduced string
-        suffix_array_induced_sort(reduced_string, alphabet_size)
+        recursive_suff_arr_induce_sort(reduced_string, alphabet_size)
     }
 }
 
@@ -322,7 +311,7 @@ mod tests {
     #[test]
     fn test_sais_mmiissiissiippii() {
         let reference = remap_string("CCAATTAATTAAGGAA$");
-        let sa = suffix_array_induced_sort(&reference, ALPHABET.len());
+        let sa = suffix_array_induced_sort(&reference);
         assert_eq!(
             vec![16, 15, 14, 10, 6, 2, 11, 7, 3, 1, 0, 13, 12, 9, 5, 8, 4],
             sa
@@ -333,19 +322,18 @@ mod tests {
     fn test_sais_cacag() {
         // CACAG isn't instantly turned into a suffix array by the first induced sort
         let reference = remap_string("CACAG$");
-        let sa = suffix_array_induced_sort(&reference, ALPHABET.len());
+        let sa = suffix_array_induced_sort(&reference);
         assert_eq!(vec![5, 1, 3, 0, 2, 4], sa);
     }
 
     #[test]
     fn test_sais_compare_naive_mmiissiissiippii() {
-        let genome_u8 = remap_string("CCAATTAATTAAGGAA$");
-        let naive = construct_suffix_array_naive(&genome_u8);
-        let genome_u32 = genome_u8.iter().map(|&c| c as u32).collect();
-        let sais = suffix_array_induced_sort(&genome_u32, ALPHABET.len());
+        let genome = remap_string("CCAATTAATTAAGGAA$");
+        let naive = construct_suffix_array_naive(&genome);
+        let sais = suffix_array_induced_sort(&genome);
         for i in 0..sais.len() {
             if sais[i] != naive[i] {
-                let print = &genome_u32[sais[i]..];
+                let print = &genome[sais[i]..];
                 println!("{}: {:?}, ", i, print);
             }
         }
@@ -354,13 +342,12 @@ mod tests {
 
     #[test]
     fn test_sais_compare_naive() {
-        let genome_u8 = remap_string(GEN60);
-        let naive = construct_suffix_array_naive(&genome_u8);
-        let genome_u32 = genome_u8.iter().map(|&c| c as u32).collect();
-        let sais = suffix_array_induced_sort(&genome_u32, ALPHABET.len());
+        let genome = remap_string(GEN60);
+        let naive = construct_suffix_array_naive(&genome);
+        let sais = suffix_array_induced_sort(&genome);
         for i in 0..sais.len() {
             if sais[i] != naive[i] {
-                let print = &genome_u32[sais[i]..];
+                let print = &genome[sais[i]..];
                 println!("{}: {:?}, ", i, print);
             }
         }
@@ -369,17 +356,9 @@ mod tests {
 
     #[bench]
     #[ignore = "slow"]
-    fn bench_sa_naive_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000_PATH).unwrap();
-        let genome = remap_string(&genome_string);
-        b.iter(|| construct_suffix_array_naive(&genome))
-    }
-
-    #[bench]
-    #[ignore = "slow"]
     fn bench_sais_ref1000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = remap_string(&genome_string);
-        b.iter(|| suffix_array_induced_sort(&genome, ALPHABET.len()))
+        b.iter(|| suffix_array_induced_sort(&genome))
     }
 }

@@ -17,7 +17,7 @@ use std::{
     path::Path,
     time::Instant,
 };
-use suffix_array_construction::construct_suffix_array_naive;
+use suffix_array_construction::{suffix_array_induced_sort, construct_suffix_array_naive};
 use table_gen::{generate_c_table, generate_o_table};
 use types::*;
 use util::*;
@@ -69,7 +69,7 @@ pub fn log_performance() -> std::io::Result<()> {
     // Initialize suffix array, O-table, and C-table
     let suff_and_table_start = Instant::now();
 
-    let suffix_array = construct_suffix_array_naive(&genome);
+    let suffix_array = suffix_array_induced_sort(&genome);
 
     let o_table = generate_o_table(&genome, &suffix_array);
     let c_table = generate_c_table(&genome);
