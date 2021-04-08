@@ -11,16 +11,16 @@ pub fn suffix_array_induced_sort(reference: &[u8]) -> SuffixArray {
 
 fn recursive_suff_arr_induce_sort(reference: &[u32], alphabet_size: usize) -> SuffixArray {
     let types = build_type_array(reference);
-    let p1 = build_lms_array(&types);
+    let lms_array = build_lms_array(&types);
     let bucket_sizes = build_bucket_sizes(reference, alphabet_size);
 
     let mut suffix_array = vec![UNDEFINED; reference.len()];
-    place_lms(reference, &mut suffix_array, &p1, &bucket_sizes);
+    place_lms(reference, &mut suffix_array, &lms_array, &bucket_sizes);
     induce_l_types(reference, &mut suffix_array, &types, &bucket_sizes);
     induce_s_types(reference, &mut suffix_array, &types, &bucket_sizes);
 
     let (reduced_string, reduced_offsets, new_alphabet_size) =
-        reduce_reference_string(reference, &suffix_array, &p1, &types);
+        reduce_reference_string(reference, &suffix_array, &types);
 
     let reduced_sa = compute_reduced_suffix_array(&reduced_string, new_alphabet_size);
 
@@ -60,18 +60,18 @@ fn build_type_array(reference: &[u32]) -> Vec<bool> {
 
 fn build_lms_array(types: &[bool]) -> Vec<usize> {
     let n = types.len();
-    let mut lms_substrings = Vec::new();
+    let mut lms_array = Vec::new();
 
     if types[0] {
-        lms_substrings.push(0)
+        lms_array.push(0)
     }
     for i in 1..n {
         if types[i] && !types[i - 1] {
-            lms_substrings.push(i)
+            lms_array.push(i)
         }
     }
 
-    lms_substrings
+    lms_array
 }
 
 fn build_bucket_sizes(reference: &[u32], alphabet_size: usize) -> Vec<usize> {
@@ -108,12 +108,12 @@ pub fn find_bucket_tails(bucket_sizes: &[usize]) -> Vec<usize> {
 fn place_lms(
     reference: &[u32],
     suffix_array: &mut SuffixArray,
-    lms_pointers: &[usize],
+    lms_array: &[usize],
     bucket_sizes: &[usize],
 ) {
     let mut bucket_tails = find_bucket_tails(bucket_sizes);
 
-    for &i in lms_pointers {
+    for &i in lms_array {
         let c = reference[i];
         bucket_tails[c as usize] -= 1;
         suffix_array[bucket_tails[c as usize]] = i;
@@ -169,7 +169,6 @@ fn induce_s_types(
 fn reduce_reference_string(
     reference: &[u32],
     suffix_array: &[usize],
-    lms_pointers: &[usize],
     types: &[bool],
 ) -> (Vec<u32>, Vec<usize>, usize) {
     let n = reference.len();
@@ -180,11 +179,11 @@ fn reduce_reference_string(
     let mut prev_lms_substring = suffix_array[0];
 
     for &j in suffix_array.iter() {
-        if !lms_pointers.contains(&j) {
+        if !is_lms_index(types, j) {
             continue;
         }
 
-        if !compare_lms(reference, types, lms_pointers, prev_lms_substring, j) {
+        if !compare_lms(reference, types, prev_lms_substring, j) {
             name += 1;
         }
         prev_lms_substring = j;
@@ -206,13 +205,15 @@ fn reduce_reference_string(
     (reduced_string, reduced_offsets, new_alphabet_size)
 }
 
-fn compare_lms(
-    reference: &[u32],
-    types: &[bool],
-    lms_pointers: &[usize],
-    i: usize,
-    j: usize,
-) -> bool {
+fn is_lms_index(types: &[bool], j: usize) -> bool {
+    if j == 0 {
+        false
+    } else {
+        types[j] && !types[j - 1]
+    }
+}
+
+fn compare_lms(reference: &[u32], types: &[bool], i: usize, j: usize) -> bool {
     if i == j {
         return true;
     }
@@ -224,7 +225,7 @@ fn compare_lms(
 
     let mut k = 0;
     loop {
-        if k > 0 && lms_pointers.contains(&(i + k)) && lms_pointers.contains(&(j + k)) {
+        if k > 0 && is_lms_index(types, i + k) && is_lms_index(types, j + k) {
             return true;
         }
 
@@ -368,6 +369,7 @@ mod tests {
     }
 
     #[bench]
+    #[ignore = "very very slow"]
     fn bench_naive_ref1000000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000000_PATH).unwrap();
         let genome = remap_string(&genome_string);
