@@ -50,7 +50,7 @@ impl<'a> OTable<'a> {
             )
         }
         let offset = (self.array.len() / ALPHABET.len()) * a;
-    
+
         (offset + i / self.spacing, i % self.spacing)
     }
 
@@ -60,17 +60,9 @@ impl<'a> OTable<'a> {
 
     fn find_count(&self, from: usize, to: usize, character: u8) -> usize {
         let mut count = 0;
-        println!("from {} to {}", from, to);
-        // println!("{:?}", self.suffix_array);
-        // println!("{:?}", (0..self.suffix_array.len()).map(|i| bwt(self.string, self.suffix_array, i)).collect::<Vec<u8>>());
-        // println!("{:?}", (0..self.suffix_array.len()).map(|i| bwt(self.string, self.suffix_array, i)).collect::<Vec<u8>>().iter().take(to).skip(from).map(|&n| n).collect::<Vec<u8>>());
-        /*
+
         for i in from..to {
-            
-        }
-        */
-        for i in (from + 1)..to {
-            if character == bwt(self.string, self.suffix_array, (i % self.string.len()) ) {
+            if character == bwt(self.string, self.suffix_array, i) {
                 count += 1;
             }
         }
@@ -78,19 +70,9 @@ impl<'a> OTable<'a> {
     }
 
     pub fn get(&self, a: u8, i: usize) -> usize {
-        /*
-        i = 43
-        a, 4 og så regne frem
-        hvis i % 10 == 0, så gør som normalt i / 10
-        ellers fra i / 10 op til 43
-        tag tallet på (a, i / 10) og så læg tallene i - (i % 10)..(i) 40..43 i reference
-        returner
-        */
         match self.calc_index(a, i) {
             (idx, 0) => self.array[idx],
-            (idx, j) => {
-                self.array[idx] + self.find_count(idx * self.spacing, (idx * self.spacing) + j, a)
-            }
+            (idx, _) => self.array[idx] + self.find_count(i - (i % self.spacing), i, a),
         }
     }
 
@@ -152,7 +134,7 @@ mod tests {
         let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
         let sa = suffix_array_induced_sort(&reference);
         let o_table = OTable::new(&reference, &sa);
-        
+
         assert_eq!(o_table.calc_index(2, 10), (9, 0));
         assert_eq!(o_table.calc_index(2, 11), (9, 1));
         assert_eq!(o_table.calc_index(0, 0), (0, 0));
@@ -162,7 +144,7 @@ mod tests {
     #[test]
     fn test_o_table_get() {
         /* Full O-table for ACGTATCGTGACGGGCTATAGCGATGTCGATGC$
-            0                             10                            20                            30          
+            0                             10                            20                            30
                C  G  $  T  T  T  G  G  G  T  G  A  A  T  G  T  C  C  T  A  G  G  C  C  T  C  A  C  G  G  A  G  A  A
         $ | 0  0  0  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
         A | 0  0  0  0  0  0  0  0  0  0  0  0  1  2  2  2  2  2  2  2  3  3  3  3  3  3  3  4  4  4  4  5  5  6  7
@@ -180,7 +162,6 @@ mod tests {
         assert_eq!(o_table.get(2, 13), 1);
         assert_eq!(o_table.get(3, 13), 5);
         assert_eq!(o_table.get(1, 30), 4);
-        assert!(false);
     }
 
     #[bench]
