@@ -4,7 +4,6 @@ use crate::ALPHABET;
 const UNDEFINED: usize = usize::MAX;
 
 /// SA-IS
-#[allow(dead_code)]
 pub fn suffix_array_induced_sort(reference: &[u8]) -> SuffixArray {
     let reference: Vec<u32> = reference.iter().map(|&n| n as u32).collect();
     recursive_suff_arr_induce_sort(&reference, ALPHABET.len())
@@ -130,7 +129,6 @@ fn induce_l_types(
     let mut bucket_heads = find_bucket_heads(bucket_sizes);
 
     for i in 0..reference.len() {
-
         if suffix_array[i] == usize::MAX || suffix_array[i] == 0 {
             continue;
         }
@@ -208,7 +206,13 @@ fn reduce_reference_string(
     (reduced_string, reduced_offsets, new_alphabet_size)
 }
 
-fn compare_lms(reference: &[u32], types: &[bool], lms_pointers: &[usize], i: usize, j: usize) -> bool {
+fn compare_lms(
+    reference: &[u32],
+    types: &[bool],
+    lms_pointers: &[usize],
+    i: usize,
+    j: usize,
+) -> bool {
     if i == j {
         return true;
     }
@@ -289,7 +293,7 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{read_genome, util::remap_string, HG38_1000_PATH};
+    use crate::{read_genome, util::remap_string, HG38_1000000_PATH, HG38_1000_PATH};
 
     use super::*;
     use test::Bencher;
@@ -354,5 +358,19 @@ mod tests {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = remap_string(&genome_string);
         b.iter(|| suffix_array_induced_sort(&genome))
+    }
+
+    #[bench]
+    fn bench_sais_ref1000000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000000_PATH).unwrap();
+        let genome = remap_string(&genome_string);
+        b.iter(|| suffix_array_induced_sort(&genome))
+    }
+
+    #[bench]
+    fn bench_naive_ref1000000(b: &mut Bencher) {
+        let genome_string = read_genome(HG38_1000000_PATH).unwrap();
+        let genome = remap_string(&genome_string);
+        b.iter(|| construct_suffix_array_naive(&genome))
     }
 }

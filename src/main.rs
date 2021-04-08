@@ -3,11 +3,11 @@ extern crate test;
 
 mod approx_search;
 mod exact_search;
+mod o_table;
 mod suffix_array_construction;
 mod table_gen;
 mod types;
 mod util;
-mod o_table;
 
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
@@ -19,13 +19,14 @@ use std::{
     path::Path,
     time::Instant,
 };
-use suffix_array_construction::{suffix_array_induced_sort, construct_suffix_array_naive};
-use table_gen::{generate_c_table};
+use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induced_sort};
+use table_gen::generate_c_table;
 use types::*;
 use util::*;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
 const HG38_1000_PATH: &str = "resources/genomes/hg38-1000.fa";
+const HG38_1000000_PATH: &str = "resources/genomes/hg38-1000000.fa";
 
 fn main() {
     match log_performance() {
