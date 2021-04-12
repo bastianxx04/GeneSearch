@@ -236,7 +236,7 @@ fn compare_lms(reference: &[u32], types: &[bool], lms_pointers: &[usize], i: usi
 /// If each character in the reduced string is unique, it is computed directly.
 /// Otherwise, it is computed using the SA-IS algorithm recursively.
 fn compute_reduced_suffix_array(reduced_string: &[u32], alphabet_size: usize) -> Vec<usize> {
-    if reduced_string.len() == alphabet_size {
+    if reduced_string.len() == alphabet_size { //TODO: should this be equal? it might be <= or something like that
         // There are no duplicates in the reduced string
         let mut reduced_sa = vec![0; reduced_string.len()];
         reduced_sa[0] = alphabet_size;
@@ -310,6 +310,17 @@ mod tests {
         assert_eq!(
             vec![16, 15, 14, 10, 6, 2, 11, 7, 3, 1, 0, 13, 12, 9, 5, 8, 4],
             sa
+        );
+    }
+
+    #[test]
+    fn test_sais_aaa() {
+        let reference = remap_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA$");
+        let sa = suffix_array_induced_sort(&reference);
+        println!("{:?}",sa);
+        assert_eq!(
+            320,
+            sa.len()
         );
     }
 
