@@ -3,11 +3,11 @@ extern crate test;
 
 mod approx_search;
 mod exact_search;
+mod o_table;
 mod suffix_array_construction;
 mod table_gen;
 mod types;
 mod util;
-mod o_table;
 
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
@@ -17,21 +17,40 @@ use std::{
     fs::{create_dir, File},
     io::{BufReader, Read, Write},
     path::Path,
-    time::Instant,
+    time::{Duration, Instant},
 };
-use suffix_array_construction::{suffix_array_induced_sort, construct_suffix_array_naive};
-use table_gen::{generate_c_table};
+use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induced_sort};
+use table_gen::generate_c_table;
 use types::*;
 use util::*;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
 const HG38_1000_PATH: &str = "resources/genomes/hg38-1000.fa";
+const HG38_1000000_PATH: &str = "resources/genomes/hg38-1000000.fa";
 
 fn main() {
+    let (t, len) = time_sais(HG38_1000000_PATH);
+    println!("SA-IS (length {}) took {} ms", len, t.as_millis());
+
+    /*
     match log_performance() {
         Ok(_) => println!("Finished cleanly."),
         Err(error) => println!("Error: {}", error),
     }
+    */
+}
+
+pub fn time_sais(path: &str) -> (Duration, usize) {
+    let genome = match read_genome(path) {
+        Ok(genome) => genome,
+        Err(_) => panic!("could not read genome"),
+    };
+
+    let genome = remap_string(&genome);
+
+    let time = Instant::now();
+    let sa = suffix_array_induced_sort(&genome);
+    (time.elapsed(), sa.len())
 }
 
 pub fn read_genome(path: &str) -> std::io::Result<String> {
