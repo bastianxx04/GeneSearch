@@ -92,7 +92,7 @@ pub fn log_performance() -> std::io::Result<()> {
 
     let suffix_array = suffix_array_induced_sort(&genome);
 
-    let o_table = OTable::new(&genome, &suffix_array);
+    let o_table = OTable::new(&genome, &suffix_array, 10);
     let c_table = generate_c_table(&genome);
 
     let suff_and_table_time = suff_and_table_start.elapsed().as_nanos();
@@ -120,7 +120,7 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
     let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
-    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array);
+    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array, 10);
 
     let params = ApproxSearchParams {
         reference: &genome,

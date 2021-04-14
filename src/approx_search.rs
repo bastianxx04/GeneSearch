@@ -243,9 +243,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("ATT"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -285,9 +285,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("ATT"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 0,
         };
 
@@ -310,9 +310,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("ACC"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -336,9 +336,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("AGG"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -361,9 +361,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("TAGT"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -396,9 +396,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("ACG"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -431,9 +431,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &reference,
             query: &remap_string("ACGTGTGT"),
-            o_table: &OTable::new(&reference, &suffix_array),
+            o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -453,9 +453,9 @@ mod tests {
         let params = ApproxSearchParams {
             reference: &genome,
             query: &remap_string("CTCCATCATGTCTTATGGCG"),
-            o_table: &OTable::new(&genome, &suffix_array),
+            o_table: &OTable::new(&genome, &suffix_array, 10),
             c_table: &generate_c_table(&genome),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array),
+            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
         b.iter(|| approx_search(params))

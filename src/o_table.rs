@@ -10,8 +10,7 @@ pub struct OTable<'a> {
 
 impl<'a> OTable<'a> {
     /// Allocate and generate an O-table.
-    pub fn new(string: &'a [u8], suffix_array: &'a [usize]) -> Self {
-        let spacing = 10;
+    pub fn new(string: &'a [u8], suffix_array: &'a [usize], spacing: usize) -> Self {
         let array_len = ((string.len() / spacing) + 1) * ALPHABET.len();
         let mut o_table = OTable {
             array: vec![0; array_len],
@@ -123,22 +122,10 @@ mod tests {
     fn test_o_table_shape() {
         let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
         let sa = suffix_array_induced_sort(&reference);
-        let o_table = OTable::new(&reference, &sa);
+        let o_table = OTable::new(&reference, &sa, 10);
         let (rows, cols) = o_table.shape();
         assert_eq!(rows, ALPHABET.len());
         assert_eq!(cols, reference.len() + 1);
-    }
-
-    #[test]
-    fn test_o_table_calc_index() {
-        let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
-        let sa = suffix_array_induced_sort(&reference);
-        let o_table = OTable::new(&reference, &sa);
-
-        assert_eq!(o_table.calc_index(2, 10), (9, 0));
-        assert_eq!(o_table.calc_index(2, 11), (9, 1));
-        assert_eq!(o_table.calc_index(0, 0), (0, 0));
-        assert_eq!(o_table.calc_index(0, 5), (0, 5));
     }
 
     #[test]
@@ -154,7 +141,7 @@ mod tests {
         */
         let reference = remap_string("ACGTATCGTGACGGGCTATAGCGATGTCGATGC$");
         let sa = suffix_array_induced_sort(&reference);
-        let o_table = OTable::new(&reference, &sa);
+        let o_table = OTable::new(&reference, &sa, 10);
         println!("{}", o_table);
         assert_eq!(o_table.get(2, 1), 1);
         assert_eq!(o_table.get(0, 3), 1);
@@ -169,6 +156,6 @@ mod tests {
         let genome_string = read_genome(HG38_1000_PATH).unwrap();
         let genome = remap_string(&genome_string);
         let suffix_array = suffix_array_induced_sort(&genome);
-        b.iter(|| OTable::new(&genome, &suffix_array));
+        b.iter(|| OTable::new(&genome, &suffix_array, 10));
     }
 }
