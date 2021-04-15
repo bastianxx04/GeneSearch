@@ -241,7 +241,8 @@ fn compare_lms(reference: &[u32], types: &[bool], i: usize, j: usize) -> bool {
 /// If each character in the reduced string is unique, it is computed directly.
 /// Otherwise, it is computed using the SA-IS algorithm recursively.
 fn compute_reduced_suffix_array(reduced_string: &[u32], alphabet_size: usize) -> Vec<usize> {
-    if reduced_string.len() == alphabet_size { //TODO: should this be equal? it might be <= or something like that
+    //TODO: should this be equal? it might be <= or something like that
+    if reduced_string.len() == alphabet_size {
         // There are no duplicates in the reduced string
         let mut reduced_sa = vec![0; reduced_string.len()];
         reduced_sa[0] = alphabet_size;
@@ -276,20 +277,16 @@ fn remap_lms(
 
 /// Construct a suffix array naively
 pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
-    let mut temp_data_table: Vec<(Vec<u8>, usize)> = Vec::new();
-    for i in 0..(reference.len()) {
-        let mut to_be_inserted = reference.to_owned();
+    let mut suffixes: Vec<(&[u8], usize)> = Vec::with_capacity(reference.len());
 
-        if !temp_data_table.is_empty() {
-            to_be_inserted = temp_data_table.last().unwrap().0.clone();
-            to_be_inserted.remove(0);
-        }
-        temp_data_table.push((to_be_inserted, i));
+    for i in 0..(reference.len()) {
+        let suffix = &reference[i..];
+        suffixes.push((suffix, i));
     }
 
-    temp_data_table.sort();
+    suffixes.sort();
 
-    temp_data_table.iter().map(|elem| elem.1).collect()
+    suffixes.iter().map(|elem| elem.1).collect()
 }
 
 #[cfg(test)]
@@ -322,11 +319,8 @@ mod tests {
     fn test_sais_aaa() {
         let reference = remap_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA$");
         let sa = suffix_array_induced_sort(&reference);
-        println!("{:?}",sa);
-        assert_eq!(
-            320,
-            sa.len()
-        );
+        println!("{:?}", sa);
+        assert_eq!(320, sa.len());
     }
 
     #[test]
