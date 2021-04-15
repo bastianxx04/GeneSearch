@@ -8,7 +8,6 @@ parameter = "otable 5"
 x = []  # length
 y = []  # millis
 
-"""
 os.popen(build).read()
 
 for i in range(100, 50000200, 10000000):
@@ -16,17 +15,16 @@ for i in range(100, 50000200, 10000000):
     res = os.popen(f"{run} {parameter} {str(i)}").read()
     y.append(int(res))
     x.append(i)
-"""
+
 path = os.path.join("results", "graphs")
-os.mkdir(path)
-x = [2, 5]  # length
-y = [3, 4]  # millis
+if not os.path.exists(path):
+    os.makedirs(path)
+
 plt.xlabel("String length")
 plt.ylabel("Milliseconds")
 plt.plot(x, y)
-plt.show()
-figure_location = "" #os.path.join("results", "graphs")
-plt.savefig(figure_location + "-".join(parameter.split()) + ".pdf")
+figure_location = os.path.join("results", "graphs", "-".join(parameter.split()) + ".pdf")
+plt.savefig(figure_location)
 
 """ Eventuelt gennemsnitstider
 for i in range(1, 14):
