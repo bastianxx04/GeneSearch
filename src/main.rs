@@ -52,9 +52,12 @@ fn main() {
             }
             "approx" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
+                let t = time_approx(*skips);
+                println!("{}", t.as_millis());
             },
             "exact" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
+                let t = time_exact(*skips);
             },
             _ => println!("Wut")
         }
@@ -98,14 +101,58 @@ pub fn time_otable<'a>(reference: &'a[u8], sa: &'a Vec<usize>, skips: usize) -> 
     (time.elapsed(), o_table)
 }
 
-pub fn time_approx(skips: usize) {
+pub fn time_approx(skips: usize) -> Duration {
+    let genome = match read_genome(HG38_1000000_PATH) {
+        Ok(genome) => genome,
+        Err(_) => panic!("could not read genome"),
+    };
+
+    let genome = remap_string(&genome);
+
+    let suffix_array = suffix_array_induced_sort(&genome);
+
+    let o_table = OTable::new(&genome, &suffix_array, skips);
+    let c_table = generate_c_table(&genome);
+
+    let search_string_ints =
+        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
+
+    let mut reverse_genome = genome.clone();
+    reverse_genome.reverse();
+    let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
+    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array, skips);
+
+    let params = ApproxSearchParams {
+        reference: &genome,
+        query: &search_string_ints,
+        o_table: &o_table,
+        c_table: &c_table,
+        o_rev_table: &reverse_o_table,
+        edits: 1,
+    };
+
     let time = Instant::now();
-    todo!()
+    let approx_search_result = approx_search(params);
+    time.elapsed()
 }
 
-pub fn time_exact(skips: usize) {
+pub fn time_exact(skips: usize) -> Duration {
+    let genome = match read_genome(HG38_1000000_PATH) {
+        Ok(genome) => genome,
+        Err(_) => panic!("could not read genome"),
+    };
+
+    let genome = remap_string(&genome);
+
+    let suffix_array = suffix_array_induced_sort(&genome);
+
+    let o_table = OTable::new(&genome, &suffix_array, skips);
+    let c_table = generate_c_table(&genome);
+    let search_string_ints =
+        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
     let time = Instant::now();
-    todo!()
+    bwt_search(&search_string_ints, &o_table, &c_table);
+    time.elapsed()
 }
 
 pub fn time_sais(path: &str) -> (Duration, usize) {
