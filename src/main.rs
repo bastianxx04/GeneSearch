@@ -23,21 +23,88 @@ use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induc
 use table_gen::generate_c_table;
 use types::*;
 use util::*;
+use serde_json;
+use chrono::serde::ts_seconds::serialize;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
 const HG38_1000_PATH: &str = "resources/genomes/hg38-1000.fa";
 const HG38_1000000_PATH: &str = "resources/genomes/hg38-1000000.fa";
 
-fn main() {
-    let (t, len) = time_sais(HG38_1000000_PATH);
-    println!("SA-IS (length {}) took {} ms", len, t.as_millis());
+const HG38_1000000_SA: &str = "resources/sa/hg38-1000000.txt";
 
-    /*
-    match log_performance() {
-        Ok(_) => println!("Finished cleanly."),
-        Err(error) => println!("Error: {}", error),
+fn main() {
+    let a = read_sa(HG38_1000000_SA);
+    let cmd_line: Vec<String> = std::env::args().collect();
+
+    if cmd_line.len() > 1 {
+        match cmd_line[1].as_str() {
+            "sais" => {
+                let (t, len) = time_sais(HG38_1000000_PATH);
+                println!("SA-IS (length {}) took {} ms", len, t.as_millis());
+            },
+            "otable" => {
+                let skips = &cmd_line[2].parse::<usize>().unwrap();
+                let genome_string = read_genome(HG38_1000000_PATH).unwrap();
+
+                let t = time_otable(&remap_string(&genome_string), read_sa(HG38_1000000_SA), *skips);
+                println!("{}", t.as_millis());
+            }
+            "approx" => {
+                let skips = &cmd_line[2].parse::<usize>().unwrap();
+            },
+            "exact" => {
+                let skips = &cmd_line[2].parse::<usize>().unwrap();
+            },
+            _ => println!("Wut")
+        }
+    } else {
+        println!("Nothing specified, quitting")
     }
-    */
+}
+
+fn read_sa(path: &str) -> Vec<usize> {
+    match File::open(path) {
+        Ok(file) => {
+            println!("Here");
+            //let mut buf_reader = BufReader::new(file);
+            //let mut suffix_array = String::new();
+            //buf_reader.read_to_string(&mut suffix_array);
+            let return_vec: Vec<usize> = serde_json::from_reader(file).expect("error reading json");
+            //return suffix_array;
+            return return_vec;
+        }
+        Err(_) => {
+            let genome = match read_genome(HG38_1000000_PATH) {
+                Ok(genome) => genome,
+                Err(_) => panic!("could not read genome"),
+            };
+
+            let genome = remap_string(&genome);
+            let sa = suffix_array_induced_sort(&genome);
+            println!("har regnet");
+            let mut f = File::create(path).unwrap();
+            serde
+            let a = serialize(sa, serde::Serialize);
+            let s = serde_json::to_writer(&f, &a).unwrap();
+            return sa
+        }
+    }
+}
+
+pub fn time_otable(reference: &[u8], sa: Vec<usize>, skips: usize) -> Duration {
+    let time = Instant::now();
+    let o_table = OTable::new(&reference, &sa, skips);
+    time.elapsed()
+}
+
+pub fn time_approx(skips: usize) {
+    let time = Instant::now();
+    todo!()
+}
+
+pub fn time_exact(skips: usize) {
+    let time = Instant::now();
+    todo!()
 }
 
 pub fn time_sais(path: &str) -> (Duration, usize) {
