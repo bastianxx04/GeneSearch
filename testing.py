@@ -2,12 +2,13 @@ import os
 import matplotlib.pyplot as plt
 
 run = "cargo run --release "
+parameter = "\"otable\" 5 "
 
-x = []  # skips
+x = []  # length
 y = []  # millis
 
-for i in range(1, 11):
-    res = os.popen(run).read()
+for i in range(100, 51666000, 100):
+    res = os.popen(run + parameter + i).read()
     y.append(int(res))
     x.append(i)
 

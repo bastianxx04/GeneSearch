@@ -44,7 +44,7 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
         let new_left = symbol_index + o_table.get(a as u8, left);
         let new_right = symbol_index + o_table.get(a as u8, right);
 
-        let edit_cost: i32 = if a == params.query[i as usize].into() {
+        let edit_cost: i32 = if a as u8 == params.query[i as usize] {
             0
         } else {
             1
