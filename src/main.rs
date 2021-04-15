@@ -9,6 +9,7 @@ mod table_gen;
 mod types;
 mod util;
 
+use std::collections::HashSet;
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
 use exact_search::bwt_search;
@@ -23,6 +24,7 @@ use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induc
 use table_gen::generate_c_table;
 use types::*;
 use util::*;
+use rand::Rng;
 // use serde_json;
 // use chrono::serde::ts_seconds::serialize;
 
@@ -33,7 +35,6 @@ const HG38_1000000_PATH: &str = "resources/genomes/hg38-1000000.fa";
 const HG38_1000000_SA: &str = "resources/sa/hg38-1000000.txt";
 
 fn main() {
-    let a = read_sa(HG38_1000000_SA);
     let cmd_line: Vec<String> = std::env::args().collect();
 
     if cmd_line.len() > 1 {
@@ -45,19 +46,35 @@ fn main() {
             "otable" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
                 let length = &cmd_line[3].parse::<usize>().unwrap();
-                let genome_string = read_genome(HG38_1000000_PATH).slice(0..length);
+                let mut genome_string = read_genome(HG38_1000000_PATH).unwrap()[0..*length].to_string();
+                genome_string.push('$');
+                let genome = remap_string(&genome_string);
+                let suffix_array = suffix_array_induced_sort(&genome);
 
-                let (t, o) = time_otable(&remap_string(&genome_string), &read_sa(HG38_1000000_SA), *skips);
-                println!("{}", t.as_millis());
+                let (t, o) = time_otable(&genome, &suffix_array, *skips);
+                //print!("{}_", t.as_millis());
+
+                let mut o_table_read_times = Vec::new();
+                let mut fetched = Vec::new();
+                let mut rng = rand::thread_rng();
+
+                for i in 0..10000 {
+                    let time = Instant::now();
+                    let delete_me = o.get((i % ALPHABET.len()) as u8, (rng.gen::<usize>() % genome.len()));
+                    o_table_read_times.push( time.elapsed().as_nanos() as usize );
+                    fetched.push(delete_me);
+                }
+                println!("{}", o_table_read_times.iter().fold(0, |a, &b| a + b) / o_table_read_times.len());
             }
             "approx" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
-                let t = time_approx(*skips);
+                let (t, r) = time_approx(*skips);
                 println!("{}", t.as_millis());
             },
             "exact" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
-                let t = time_exact(*skips);
+                let (t, r) = time_exact(*skips);
+                println!("{}", t.as_millis());
             },
             _ => println!("Wut")
         }
@@ -66,34 +83,6 @@ fn main() {
     }
 }
 
-fn read_sa(path: &str) -> Vec<usize> {
-    // match File::open(path) {
-    //     Ok(file) => {
-    //         println!("Here");
-    //         //let mut buf_reader = BufReader::new(file);
-    //         //let mut suffix_array = String::new();
-    //         //buf_reader.read_to_string(&mut suffix_array);
-    //         let return_vec: Vec<usize> = serde_json::from_reader(file).expect("error reading json");
-    //         //return suffix_array;
-    //         return return_vec;
-    //     }
-    //     Err(_) => {
-    //         let genome = match read_genome(HG38_1000000_PATH) {
-    //             Ok(genome) => genome,
-    //             Err(_) => panic!("could not read genome"),
-    //         };
-
-    //         let genome = remap_string(&genome);
-    //         let sa = suffix_array_induced_sort(&genome);
-    //         println!("har regnet");
-    //         let mut f = File::create(path).unwrap();
-    //         let a = serialize(sa, serde::Serialize);
-    //         let s = serde_json::to_writer(&f, &a).unwrap();
-    //         return sa
-    //     }
-    // }
-    return vec![0];
-}
 
 pub fn time_otable<'a>(reference: &'a[u8], sa: &'a Vec<usize>, skips: usize) -> (Duration, OTable<'a>) {
     let time = Instant::now();
@@ -101,21 +90,25 @@ pub fn time_otable<'a>(reference: &'a[u8], sa: &'a Vec<usize>, skips: usize) -> 
     (time.elapsed(), o_table)
 }
 
-pub fn time_approx(skips: usize) -> Duration {
+pub fn time_approx(skips: usize) -> (Duration, HashSet<(usize, usize, String, usize)>) {
     let genome = match read_genome(HG38_1000000_PATH) {
-        Ok(genome) => genome,
+        Ok(genome) => {
+            let mut res = genome[0..50000].to_string();
+            res.push('$');
+            res
+        },
         Err(_) => panic!("could not read genome"),
     };
 
     let genome = remap_string(&genome);
 
     let suffix_array = suffix_array_induced_sort(&genome);
-
+    println!("creating tables");
     let o_table = OTable::new(&genome, &suffix_array, skips);
     let c_table = generate_c_table(&genome);
 
     let search_string_ints =
-        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
+        remap_string("AATAAACCTTACCTAGCA");
 
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
@@ -130,13 +123,14 @@ pub fn time_approx(skips: usize) -> Duration {
         o_rev_table: &reverse_o_table,
         edits: 1,
     };
-
+    println!("About to search");
     let time = Instant::now();
     let approx_search_result = approx_search(params);
-    time.elapsed()
+    println!("{:?}", approx_search_result);
+    (time.elapsed(), approx_search_result)
 }
 
-pub fn time_exact(skips: usize) -> Duration {
+pub fn time_exact(skips: usize) -> (Duration, (usize, usize)) {
     let genome = match read_genome(HG38_1000000_PATH) {
         Ok(genome) => genome,
         Err(_) => panic!("could not read genome"),
@@ -151,8 +145,8 @@ pub fn time_exact(skips: usize) -> Duration {
     let search_string_ints =
         remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
     let time = Instant::now();
-    bwt_search(&search_string_ints, &o_table, &c_table);
-    time.elapsed()
+    let result = bwt_search(&search_string_ints, &o_table, &c_table);
+    (time.elapsed(), result)
 }
 
 pub fn time_sais(path: &str) -> (Duration, usize) {
