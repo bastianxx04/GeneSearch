@@ -1,5 +1,6 @@
 #![feature(test)]
 extern crate test;
+extern crate bincode;
 
 mod approx_search;
 mod exact_search;
@@ -20,13 +21,12 @@ use std::{
     path::Path,
     time::{Duration, Instant},
 };
+use crate::types::SuffixArray;
 use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induced_sort};
 use table_gen::generate_c_table;
 use types::*;
 use util::*;
 use rand::Rng;
-// use serde_json;
-// use chrono::serde::ts_seconds::serialize;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
 const HG38_1000_PATH: &str = "resources/genomes/hg38-1000.fa";
@@ -52,7 +52,6 @@ fn main() {
                 let suffix_array = suffix_array_induced_sort(&genome);
 
                 let (t, o) = time_otable(&genome, &suffix_array, *skips);
-                //print!("{}_", t.as_millis());
 
                 let mut o_table_read_times = Vec::new();
                 let mut fetched = Vec::new();
@@ -147,6 +146,28 @@ pub fn time_exact(skips: usize) -> (Duration, (usize, usize)) {
     let time = Instant::now();
     let result = bwt_search(&search_string_ints, &o_table, &c_table);
     (time.elapsed(), result)
+}
+
+fn get_sa(genome_path: &str, sa_path: &str) -> SuffixArray {
+    match File::open(sa_path) {
+        Ok(f) => {
+            let mut buf_reader = BufReader::new(f);
+            let decoded: SuffixArray = bincode::deserialize_from(buf_reader).unwrap();
+            return decoded;
+        },
+        Err(e) => {
+            match read_genome(genome_path) {
+                Ok(genome) => {
+                    let sa = suffix_array_induced_sort(&remap_string(&genome));
+                    let bytes: Vec<u8> = bincode::serialize(&sa).unwrap();
+                    let mut file = File::create(sa_path).unwrap();
+                    file.write_all(&bytes).unwrap();
+                    return sa;
+                },
+                Err(_) => panic!("could not read genome"),
+            };
+        }
+    }
 }
 
 pub fn time_sais(path: &str) -> (Duration, usize) {
