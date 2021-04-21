@@ -1,7 +1,7 @@
+use crate::o_table::OTable;
+use crate::types::CTable;
 use crate::DTable;
 use crate::ALPHABET;
-use crate::types::CTable;
-use crate::o_table::OTable;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
@@ -130,9 +130,13 @@ fn inexact_recursion(
     cigar: String,
     edits_total: usize,
 ) -> HashSet<(usize, usize, String, usize)> {
+    let InexactRecursionParams {
+        query,
+        o_table,
+        c_table,
+        d_table,
+    } = params;
 
-    let InexactRecursionParams {query, o_table, c_table, d_table} = params;
-    
     let lower_limit = match usize::try_from(i) {
         Ok(value) => d_table[value],
         Err(_) => 0,
@@ -202,10 +206,10 @@ fn inexact_recursion(
         new_left = c_table[c as usize] + o_table.get(c, left);
         new_right = c_table[c as usize] + o_table.get(c, right);
 
-        if left >= right {
+        if new_left >= new_right {
             continue;
         };
-        
+
         result_set = result_set
             .union(&inexact_recursion(
                 params,
@@ -226,8 +230,8 @@ fn inexact_recursion(
 mod tests {
     use super::*;
     use crate::{
-        bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome,
-        remap_string, HG38_1000_PATH,
+        bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome, remap_string,
+        HG38_1000_PATH,
     };
     use test::Bencher;
 
