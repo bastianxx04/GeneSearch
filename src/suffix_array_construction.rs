@@ -129,7 +129,7 @@ fn induce_l_types(
     let mut bucket_heads = find_bucket_heads(bucket_sizes);
 
     for i in 0..reference.len() {
-        if suffix_array[i] == usize::MAX || suffix_array[i] == 0 {
+        if suffix_array[i] == UNDEFINED || suffix_array[i] == 0 {
             continue;
         }
 
@@ -153,7 +153,7 @@ fn induce_s_types(
     let mut bucket_tails = find_bucket_tails(bucket_sizes);
 
     for i in (0..reference.len()).rev() {
-        if suffix_array[i] == usize::MAX || suffix_array[i] == 0 {
+        if suffix_array[i] == UNDEFINED || suffix_array[i] == 0 {
             continue;
         }
 
@@ -172,7 +172,7 @@ fn reduce_reference_string(
     types: &[bool],
 ) -> (Vec<u32>, Vec<usize>, usize) {
     let n = reference.len();
-    let mut names_buf = vec![usize::MAX; n + 1];
+    let mut names_buf = vec![UNDEFINED; n + 1];
     let mut name = 0;
 
     names_buf[suffix_array[0]] = name;
