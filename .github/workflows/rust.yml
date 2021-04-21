@@ -20,8 +20,20 @@ jobs:
         components: clippy
         override: true
     - name: Build
-      run: cargo build --verbose
-    - name: Benchmarks
-      run: cargo bench 
+      run: cargo build --verbose 
+    
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
     - name: Run tests
       run: cargo test --verbose
+
+  bench:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Benchmarks
+      run: cargo bench
