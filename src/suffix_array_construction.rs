@@ -265,8 +265,8 @@ fn remap_lms(
     bucket_sizes: &[usize],
 ) {
     let mut bucket_tails = find_bucket_tails(bucket_sizes);
-    for i in (1..(reduced_sa.len() + 1)).rev() {
-        let j = reduced_offsets[reduced_sa[i - 1]];
+    for i in (0..reduced_sa.len()).rev() {
+        let j = reduced_offsets[reduced_sa[i]];
         let c = reference[j] as usize;
         bucket_tails[c] -= 1;
         suffix_array[bucket_tails[c]] = j;
