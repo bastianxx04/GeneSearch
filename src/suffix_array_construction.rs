@@ -261,13 +261,12 @@ fn compute_reduced_suffix_array(reduced_string: &[u32], alphabet_size: usize) ->
 fn remap_lms(
     reference: &[u32],
     suffix_array: &mut [usize],
-    reduced_string: &[u32],
     reduced_offsets: &[usize],
     reduced_sa: &[usize],
     bucket_sizes: &[usize],
 ) {
     let mut bucket_tails = find_bucket_tails(bucket_sizes);
-    for i in (1..(reduced_string.len() + 1)).rev() {
+    for i in (1..(reduced_sa.len() + 1)).rev() {
         let j = reduced_offsets[reduced_sa[i - 1]];
         let c = reference[j] as usize;
         bucket_tails[c] -= 1;
@@ -367,6 +366,7 @@ mod tests {
     }
 
     #[bench]
+    #[ignore = "reason"]
     fn bench_sais_ref1000000(b: &mut Bencher) {
         let genome_string = read_genome(HG38_1000000_PATH).unwrap();
         let genome = remap_string(&genome_string);
