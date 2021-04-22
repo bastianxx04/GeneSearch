@@ -31,7 +31,6 @@ fn recursive_suff_arr_induce_sort(reference: &[u32], alphabet_size: usize) -> Su
     remap_lms(
         reference,
         &mut suffix_array,
-        &reduced_string,
         &reduced_offsets,
         &reduced_sa,
         &bucket_sizes,
