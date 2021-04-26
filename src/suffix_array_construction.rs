@@ -10,15 +10,24 @@ pub fn suffix_array_induced_sort(reference: &[u8]) -> SuffixArray {
 }
 
 fn recursive_suff_arr_induce_sort(reference: &[u32], alphabet_size: usize) -> SuffixArray {
+    println!("Entering SA-IS");
     let types = build_type_array(reference);
     let lms_array = build_lms_array(&types);
     let bucket_sizes = build_bucket_sizes(reference, alphabet_size);
 
+    println!("Allocating suffix array");
     let mut suffix_array = vec![UNDEFINED; reference.len()];
+    println!("Induced sort");
     place_lms(reference, &mut suffix_array, &lms_array, &bucket_sizes);
     induce_l_types(reference, &mut suffix_array, &types, &bucket_sizes);
     induce_s_types(reference, &mut suffix_array, &types, &bucket_sizes);
 
+    println!(
+        "first in suffix array is undefined: {}",
+        suffix_array[0] == UNDEFINED
+    );
+
+    println!("Reducing string");
     let (reduced_string, reduced_offsets, new_alphabet_size) =
         reduce_reference_string(reference, &suffix_array, &types);
 

@@ -4,6 +4,7 @@ use crate::suffix_array_construction::{
     find_bucket_heads, find_bucket_tails, suffix_array_induced_sort,
 };
 use crate::types::SuffixArray;
+use crate::o_table::OTable;
 use crate::ALPHABET;
 use num::{NumCast, Unsigned};
 use std::fs::File;
@@ -113,6 +114,29 @@ pub fn get_sa(genome: &str) -> SuffixArray {
                 file.write_all(&bytes).unwrap();
                 sa
             }
+            Err(_) => panic!("could not read genome"),
+        },
+    }
+}
+
+pub fn get_o_table(filename: &'de str, spacing: usize) -> OTable<'de> {
+    let otable_path = Path::new("resources/otable/").join(filename);
+    otable_path.set_extension(spacing.to_string());
+    match File::open(&otable_path) {
+        Ok(f) => {
+            let buf_reader = BufReader::new(f);
+            let decoded: OTable = bincode::deserialize_from(buf_reader).unwrap();
+            decoded
+        },
+        Err(_) => match read_genome(filename) {
+            Ok(genome) => {
+                let sa = get_sa(&genome);
+                let o_table = OTable::new(&remap_string(&genome), &sa, spacing);
+                let bytes: Vec<u8> = bincode::serialize(&o_table).unwrap();
+                let mut file = File::create(&otable_path).unwrap();
+                file.write_all(&bytes).unwrap();
+                o_table
+            },
             Err(_) => panic!("could not read genome"),
         },
     }

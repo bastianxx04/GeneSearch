@@ -1,6 +1,8 @@
 use crate::{bwt, ALPHABET};
 use std::fmt::{Display, Formatter};
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct OTable<'a> {
     array: Vec<usize>,
     spacing: usize,

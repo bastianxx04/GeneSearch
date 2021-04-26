@@ -15,6 +15,7 @@ use chrono::Local;
 use exact_search::bwt_search;
 use o_table::OTable;
 use rand::Rng;
+use seq_io::fasta::Reader;
 use std::collections::HashSet;
 use std::{
     fs::{create_dir, File},
@@ -36,19 +37,31 @@ fn main() {
 
     if cmd_line.len() > 1 {
         match cmd_line[1].as_str() {
+            "seq" => {
+                let mut reader = Reader::from_path("resources/genomes/hg38-1000.fa").unwrap();
+                loop {
+                    match reader.next() {
+                        Some(Ok(rec)) => {
+                            println!("{:?}", rec.full_seq().len());
+                        }
+                        _ => break,
+                    }
+                }
+            }
             "sais" => {
                 let (t, len) = time_sais(HG38_1000000);
                 println!("SA-IS (length {}) took {} ms", len, t.as_millis());
             }
             "otable" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
-                let length = &cmd_line[3].parse::<usize>().unwrap();
-                let mut genome_string = read_genome(HG38_1000000).unwrap()[0..*length].to_string();
+                // let length = &cmd_line[3].parse::<usize>().unwrap();
+                let mut genome_string = read_genome(HG38_1000000).unwrap().to_string();
                 genome_string.push('$');
                 let genome = remap_string(&genome_string);
                 let suffix_array = suffix_array_induced_sort(&genome);
 
                 let (_, o) = time_otable(&genome, &suffix_array, *skips);
+                println!("Built O-table.");
 
                 let mut o_table_read_times = Vec::new();
                 let mut fetched = Vec::new();
