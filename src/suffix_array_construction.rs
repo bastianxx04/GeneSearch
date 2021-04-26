@@ -289,7 +289,7 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{read_genome, util::remap_string, HG38_1000000_PATH, HG38_1000_PATH};
+    use crate::{read_genome, util::remap_string, HG38_1000, HG38_1000000};
 
     use super::*;
     use test::Bencher;
@@ -359,7 +359,7 @@ mod tests {
 
     #[bench]
     fn bench_sais_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome_string = read_genome(HG38_1000).unwrap();
         let genome = remap_string(&genome_string);
         b.iter(|| suffix_array_induced_sort(&genome))
     }
@@ -367,7 +367,7 @@ mod tests {
     #[bench]
     #[ignore = "reason"]
     fn bench_sais_ref1000000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000000_PATH).unwrap();
+        let genome_string = read_genome(HG38_1000000).unwrap();
         let genome = remap_string(&genome_string);
         b.iter(|| suffix_array_induced_sort(&genome))
     }
@@ -375,7 +375,7 @@ mod tests {
     #[bench]
     #[ignore = "very very slow"]
     fn bench_naive_ref1000000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000000_PATH).unwrap();
+        let genome_string = read_genome(HG38_1000000).unwrap();
         let genome = remap_string(&genome_string);
         b.iter(|| construct_suffix_array_naive(&genome))
     }

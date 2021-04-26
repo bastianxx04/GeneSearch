@@ -47,8 +47,7 @@ pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]
 mod tests {
     use super::*;
     use crate::{
-        construct_suffix_array_naive, generate_c_table, read_genome,
-        remap_string, HG38_1000_PATH,
+        construct_suffix_array_naive, generate_c_table, read_genome, remap_string, HG38_1000,
     };
     use test::Bencher;
 
@@ -114,7 +113,7 @@ mod tests {
 
     #[bench]
     fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome_string = read_genome(HG38_1000).unwrap();
         let genome = remap_string(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
         let o_table = OTable::new(&genome, &suffix_array, 10);

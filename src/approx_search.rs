@@ -231,7 +231,7 @@ mod tests {
     use super::*;
     use crate::{
         bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome, remap_string,
-        HG38_1000_PATH,
+        HG38_1000,
     };
     use test::Bencher;
 
@@ -449,7 +449,7 @@ mod tests {
 
     #[bench]
     fn bench_approx_search_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000_PATH).unwrap();
+        let genome_string = read_genome(HG38_1000).unwrap();
         let genome = remap_string(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
         let reverse_reference: Vec<u8> = genome.iter().rev().map(|&x| x).collect();

@@ -1,8 +1,14 @@
 #![allow(dead_code)]
 
-use crate::suffix_array_construction::{find_bucket_heads, find_bucket_tails};
+use crate::suffix_array_construction::{
+    find_bucket_heads, find_bucket_tails, suffix_array_induced_sort,
+};
+use crate::types::SuffixArray;
 use crate::ALPHABET;
 use num::{NumCast, Unsigned};
+use std::fs::File;
+use std::io::{BufReader, Read, Write};
+use std::path::Path;
 
 pub fn remap_string<T: Unsigned + NumCast>(s: &str) -> Vec<T> {
     s.chars()
@@ -72,4 +78,42 @@ pub fn print_sais_buckets(suffix_array: &[usize], bucket_sizes: &[usize], i: usi
     print!("  @");
 
     println!();
+}
+
+pub fn read_genome<P>(filename: P) -> std::io::Result<String>
+where
+    P: AsRef<Path>,
+{
+    let mut path = Path::new("resources/genomes/").join(filename);
+    path.set_extension("fa");
+    let genome_file = File::open(path)?;
+    let mut buf_reader = BufReader::new(genome_file);
+    let mut genome_string_raw = String::new();
+    buf_reader.read_to_string(&mut genome_string_raw)?;
+    let mut genome_string = genome_string_raw.replace('\n', "");
+    genome_string = genome_string.replace("> chr1", "");
+    genome_string.push('$');
+
+    Ok(genome_string)
+}
+
+pub fn get_sa(genome: &str) -> SuffixArray {
+    let sa_path = Path::new("resources/sa/").join(genome);
+    match File::open(&sa_path) {
+        Ok(f) => {
+            let buf_reader = BufReader::new(f);
+            let decoded: SuffixArray = bincode::deserialize_from(buf_reader).unwrap();
+            decoded
+        }
+        Err(_) => match read_genome(genome) {
+            Ok(genome) => {
+                let sa = suffix_array_induced_sort(&remap_string(&genome));
+                let bytes: Vec<u8> = bincode::serialize(&sa).unwrap();
+                let mut file = File::create(&sa_path).unwrap();
+                file.write_all(&bytes).unwrap();
+                sa
+            }
+            Err(_) => panic!("could not read genome"),
+        },
+    }
 }

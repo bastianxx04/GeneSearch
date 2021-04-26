@@ -1,6 +1,6 @@
 #![feature(test)]
-extern crate test;
 extern crate bincode;
+extern crate test;
 
 mod approx_search;
 mod exact_search;
@@ -10,29 +10,26 @@ mod table_gen;
 mod types;
 mod util;
 
-use std::collections::HashSet;
 use approx_search::{approx_search, ApproxSearchParams};
 use chrono::Local;
 use exact_search::bwt_search;
 use o_table::OTable;
+use rand::Rng;
+use std::collections::HashSet;
 use std::{
     fs::{create_dir, File},
-    io::{BufReader, Read, Write},
+    io::Write,
     path::Path,
     time::{Duration, Instant},
 };
-use crate::types::SuffixArray;
 use suffix_array_construction::{construct_suffix_array_naive, suffix_array_induced_sort};
 use table_gen::generate_c_table;
 use types::*;
 use util::*;
-use rand::Rng;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
-const HG38_1000_PATH: &str = "resources/genomes/hg38-1000.fa";
-const HG38_1000000_PATH: &str = "resources/genomes/hg38-1000000.fa";
-
-const HG38_1000000_SA: &str = "resources/sa/hg38-1000000.txt";
+const HG38_1000000: &str = "hg38-1000000";
+const HG38_1000: &str = "hg38-1000";
 
 fn main() {
     let cmd_line: Vec<String> = std::env::args().collect();
@@ -40,18 +37,18 @@ fn main() {
     if cmd_line.len() > 1 {
         match cmd_line[1].as_str() {
             "sais" => {
-                let (t, len) = time_sais(HG38_1000000_PATH);
+                let (t, len) = time_sais(HG38_1000000);
                 println!("SA-IS (length {}) took {} ms", len, t.as_millis());
-            },
+            }
             "otable" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
                 let length = &cmd_line[3].parse::<usize>().unwrap();
-                let mut genome_string = read_genome(HG38_1000000_PATH).unwrap()[0..*length].to_string();
+                let mut genome_string = read_genome(HG38_1000000).unwrap()[0..*length].to_string();
                 genome_string.push('$');
                 let genome = remap_string(&genome_string);
                 let suffix_array = suffix_array_induced_sort(&genome);
 
-                let (t, o) = time_otable(&genome, &suffix_array, *skips);
+                let (_, o) = time_otable(&genome, &suffix_array, *skips);
 
                 let mut o_table_read_times = Vec::new();
                 let mut fetched = Vec::new();
@@ -59,43 +56,52 @@ fn main() {
 
                 for i in 0..10000 {
                     let time = Instant::now();
-                    let delete_me = o.get((i % ALPHABET.len()) as u8, (rng.gen::<usize>() % genome.len()));
-                    o_table_read_times.push( time.elapsed().as_nanos() as usize );
+                    let delete_me = o.get(
+                        (i % ALPHABET.len()) as u8,
+                        rng.gen::<usize>() % genome.len(),
+                    );
+                    o_table_read_times.push(time.elapsed().as_nanos() as usize);
                     fetched.push(delete_me);
                 }
-                println!("{}", o_table_read_times.iter().fold(0, |a, &b| a + b) / o_table_read_times.len());
+                println!(
+                    "{}",
+                    o_table_read_times.iter().sum::<usize>() / o_table_read_times.len()
+                );
             }
             "approx" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
-                let (t, r) = time_approx(*skips);
+                let (t, _) = time_approx(*skips);
                 println!("{}", t.as_millis());
-            },
+            }
             "exact" => {
                 let skips = &cmd_line[2].parse::<usize>().unwrap();
-                let (t, r) = time_exact(*skips);
+                let (t, _) = time_exact(*skips);
                 println!("{}", t.as_millis());
-            },
-            _ => println!("Wut")
+            }
+            _ => println!("Wut"),
         }
     } else {
         println!("Nothing specified, quitting")
     }
 }
 
-
-pub fn time_otable<'a>(reference: &'a[u8], sa: &'a Vec<usize>, skips: usize) -> (Duration, OTable<'a>) {
+pub fn time_otable<'a>(
+    reference: &'a [u8],
+    sa: &'a [usize],
+    skips: usize,
+) -> (Duration, OTable<'a>) {
     let time = Instant::now();
     let o_table = OTable::new(&reference, &sa, skips);
     (time.elapsed(), o_table)
 }
 
 pub fn time_approx(skips: usize) -> (Duration, HashSet<(usize, usize, String, usize)>) {
-    let genome = match read_genome(HG38_1000000_PATH) {
+    let genome = match read_genome(HG38_1000000) {
         Ok(genome) => {
             let mut res = genome[0..50000].to_string();
             res.push('$');
             res
-        },
+        }
         Err(_) => panic!("could not read genome"),
     };
 
@@ -106,8 +112,7 @@ pub fn time_approx(skips: usize) -> (Duration, HashSet<(usize, usize, String, us
     let o_table = OTable::new(&genome, &suffix_array, skips);
     let c_table = generate_c_table(&genome);
 
-    let search_string_ints =
-        remap_string("AATAAACCTTACCTAGCA");
+    let search_string_ints = remap_string("AATAAACCTTACCTAGCA");
 
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
@@ -130,7 +135,7 @@ pub fn time_approx(skips: usize) -> (Duration, HashSet<(usize, usize, String, us
 }
 
 pub fn time_exact(skips: usize) -> (Duration, (usize, usize)) {
-    let genome = match read_genome(HG38_1000000_PATH) {
+    let genome = match read_genome(HG38_1000000) {
         Ok(genome) => genome,
         Err(_) => panic!("could not read genome"),
     };
@@ -148,28 +153,6 @@ pub fn time_exact(skips: usize) -> (Duration, (usize, usize)) {
     (time.elapsed(), result)
 }
 
-fn get_sa(genome_path: &str, sa_path: &str) -> SuffixArray {
-    match File::open(sa_path) {
-        Ok(f) => {
-            let mut buf_reader = BufReader::new(f);
-            let decoded: SuffixArray = bincode::deserialize_from(buf_reader).unwrap();
-            return decoded;
-        },
-        Err(e) => {
-            match read_genome(genome_path) {
-                Ok(genome) => {
-                    let sa = suffix_array_induced_sort(&remap_string(&genome));
-                    let bytes: Vec<u8> = bincode::serialize(&sa).unwrap();
-                    let mut file = File::create(sa_path).unwrap();
-                    file.write_all(&bytes).unwrap();
-                    return sa;
-                },
-                Err(_) => panic!("could not read genome"),
-            };
-        }
-    }
-}
-
 pub fn time_sais(path: &str) -> (Duration, usize) {
     let genome = match read_genome(path) {
         Ok(genome) => genome,
@@ -181,18 +164,6 @@ pub fn time_sais(path: &str) -> (Duration, usize) {
     let time = Instant::now();
     let sa = suffix_array_induced_sort(&genome);
     (time.elapsed(), sa.len())
-}
-
-pub fn read_genome(path: &str) -> std::io::Result<String> {
-    let genome_file = File::open(path)?;
-    let mut buf_reader = BufReader::new(genome_file);
-    let mut genome_string_raw = String::new();
-    buf_reader.read_to_string(&mut genome_string_raw)?;
-    let mut genome_string = genome_string_raw.replace('\n', "");
-    genome_string = genome_string.replace("> chr1", "");
-    genome_string.push('$');
-
-    Ok(genome_string)
 }
 
 pub fn log_performance() -> std::io::Result<()> {
@@ -212,7 +183,7 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut file = File::create(filename)?;
 
     // Read the genome file
-    let genome_string = read_genome(HG38_1000_PATH)?;
+    let genome_string = read_genome(HG38_1000)?;
 
     // Run the algs
     let genome = remap_string(&genome_string);
@@ -325,8 +296,3 @@ Approx search took {} ns ({} s) and yielded {} \n
 
     Ok(())
 }
-
-//TODO: MAKE SA-IS
-//TODO: MAKE SKIPS IN O TABLE
-//TODO: MAKE SKIPS IN NUMBERING TABLE
-//TODO: WRITE ABOUT IT
