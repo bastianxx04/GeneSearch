@@ -1,5 +1,10 @@
 use crate::{bwt, ALPHABET};
-use std::fmt::{Display, Formatter};
+use std::io::{BufReader, Write};
+use std::{
+    fmt::{Display, Formatter},
+    fs::File,
+    path::Path,
+};
 
 pub struct OTable<'a> {
     array: Vec<usize>,
@@ -40,6 +45,41 @@ impl<'a> OTable<'a> {
         }
 
         o_table
+    }
+
+    // Reads an O-table from a given file
+    pub fn from_file(
+        filename: &str,
+        string: &'a [u8],
+        suffix_array: &'a [usize],
+        spacing: usize,
+    ) -> Self {
+        let mut otable_path = Path::new("resources/otable/").join(filename);
+        otable_path.set_extension(spacing.to_string());
+        match File::open(&otable_path) {
+            Ok(f) => {
+                let buf_reader = BufReader::new(f);
+                let mut decoded: Vec<usize> = bincode::deserialize_from(buf_reader).unwrap();
+                let sentinel = decoded.pop().unwrap(); // Tjek om decoded size ændrer sig
+                OTable {
+                    array: decoded,
+                    spacing,
+                    sentinel,
+                    string: &string,
+                    suffix_array: &suffix_array,
+                }
+            }
+            Err(_) => {
+                // File doesn't exist, generate it
+                let o_table = OTable::new(&string, &suffix_array, spacing);
+                let mut array = o_table.array.clone();
+                array.push(o_table.sentinel);
+                let bytes: Vec<u8> = bincode::serialize(&array).unwrap();
+                let mut file = File::create(&otable_path).unwrap();
+                file.write_all(&bytes).unwrap();
+                o_table
+            }
+        }
     }
 
     /// Calculates the index into the internal array.

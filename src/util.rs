@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::o_table::OTable;
 use crate::suffix_array_construction::{
     find_bucket_heads, find_bucket_tails, suffix_array_induced_sort,
 };
@@ -80,10 +81,7 @@ pub fn print_sais_buckets(suffix_array: &[usize], bucket_sizes: &[usize], i: usi
     println!();
 }
 
-pub fn read_genome<P>(filename: P) -> std::io::Result<String>
-where
-    P: AsRef<Path>,
-{
+pub fn read_genome(filename: &str) -> std::io::Result<String> {
     let mut path = Path::new("resources/genomes/").join(filename);
     path.set_extension("fa");
     let genome_file = File::open(path)?;
@@ -97,23 +95,43 @@ where
     Ok(genome_string)
 }
 
-pub fn get_sa(genome: &str) -> SuffixArray {
-    let sa_path = Path::new("resources/sa/").join(genome);
+pub fn read_and_remap_genome<T>(file_name: &str) -> Vec<T>
+where
+    T: Unsigned + NumCast,
+{
+    let genome = match read_genome(file_name) {
+        Ok(genome) => genome,
+        Err(_) => panic!("could not read genome"),
+    };
+
+    remap_string(&genome)
+}
+
+pub fn get_sa(file_name: &str, genome: &[u8]) -> SuffixArray {
+    let sa_path = Path::new("resources/sa/").join(file_name);
     match File::open(&sa_path) {
         Ok(f) => {
             let buf_reader = BufReader::new(f);
             let decoded: SuffixArray = bincode::deserialize_from(buf_reader).unwrap();
             decoded
         }
-        Err(_) => match read_genome(genome) {
-            Ok(genome) => {
-                let sa = suffix_array_induced_sort(&remap_string(&genome));
-                let bytes: Vec<u8> = bincode::serialize(&sa).unwrap();
-                let mut file = File::create(&sa_path).unwrap();
-                file.write_all(&bytes).unwrap();
-                sa
-            }
-            Err(_) => panic!("could not read genome"),
-        },
+        Err(_) => {
+            let sa = suffix_array_induced_sort(&genome);
+            let bytes: Vec<u8> = bincode::serialize(&sa).unwrap();
+            let mut file = File::create(&sa_path).unwrap();
+            file.write_all(&bytes).unwrap();
+            sa
+        }
     }
+}
+
+pub fn get_o_table<'a>(
+    file_name: &str,
+    genome: &'a [u8],
+    suffix_array: &'a [usize],
+    spacing: usize,
+    rev: bool,
+) -> OTable<'a> {
+    let file_name = &format!("{}{}", file_name, if rev { "_rev" } else { "" });
+    OTable::from_file(file_name, genome, suffix_array, spacing)
 }
