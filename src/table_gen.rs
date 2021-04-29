@@ -34,13 +34,12 @@ pub fn generate_c_table(reference: &[u8]) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{read_genome, remap_string, HG38_1000};
+    use crate::{util::read_and_remap_genome, HG38_1000};
     use test::Bencher;
 
     #[bench]
     fn bench_c_table_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome = read_and_remap_genome(HG38_1000);
         b.iter(|| generate_c_table(&genome));
     }
 }

@@ -58,7 +58,7 @@ pub fn time_o_table(args: Vec<String>) {
     let file_name = HG38_1000000;
 
     let genome = read_and_remap_genome(file_name);
-    let suffix_array = get_sa(file_name, &genome);
+    let suffix_array = get_sa(file_name, &genome, false);
 
     let time = Instant::now();
     let o_table = OTable::new(&genome, &suffix_array, spacing);
@@ -71,33 +71,41 @@ pub fn time_approx(args: Vec<String>) {
     let spacing = args[2].parse::<usize>().unwrap();
     let genome_file_name = HG38_1000000;
 
-    // TODO: Tag et faktisk read i stedet for denne string
-    let query = remap_string("AATAAACCTTACCTAGCA");
+    let genome = read_genome(genome_file_name);
+    let remapped_genome = remap_reference(&genome);
 
-    let genome = read_and_remap_genome(genome_file_name);
-    let suffix_array = get_sa(genome_file_name, &genome);
+    let suffix_array = get_sa(genome_file_name, &remapped_genome, false);
+    let o_table = get_o_table(
+        genome_file_name,
+        &remapped_genome,
+        &suffix_array,
+        spacing,
+        false,
+    );
+    let c_table = generate_c_table(&remapped_genome);
 
-    let o_table = get_o_table(genome_file_name, &genome, &suffix_array, spacing, false);
-    let c_table = generate_c_table(&genome);
+    let reverse_genome: String = genome.chars().rev().collect();
+    let reverse_remapped = remap_reference(&reverse_genome);
 
-    let mut reverse_genome = genome.clone();
-    reverse_genome.reverse();
     // TODO: Gem også reverse suffix array til disk
-    let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
+    let reverse_suffix_array = get_sa(genome_file_name, &reverse_remapped, true);
     let reverse_o_table = get_o_table(
         &genome_file_name,
-        &reverse_genome,
+        &reverse_remapped,
         &reverse_suffix_array,
         spacing,
         true,
     );
 
+    // TODO: Tag et faktisk read i stedet for denne string
+    let query = remap_query("AATAAACCTTACCTAGCA");
+
     let params = ApproxSearchParams {
-        reference: &genome,
+        reference: &remapped_genome,
         query: &query,
         o_table: &o_table,
         c_table: &c_table,
-        o_rev_table: &reverse_o_table,
+        rev_o_table: &reverse_o_table,
         edits: 1,
     };
 
@@ -114,11 +122,10 @@ pub fn time_exact(args: Vec<String>) {
     let file_name = HG38_1000000;
 
     // TODO: Tag et faktisk read i stedet for denne string
-    let query =
-        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
+    let query = remap_query("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
 
     let genome = read_and_remap_genome(file_name);
-    let suffix_array = get_sa(file_name, &genome);
+    let suffix_array = get_sa(file_name, &genome, false);
     let o_table = get_o_table(file_name, &genome, &suffix_array, spacing, false);
     let c_table = generate_c_table(&genome);
 
@@ -147,10 +154,10 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut file = File::create(filename)?;
 
     // Read the genome file
-    let genome_string = read_genome(HG38_1000)?;
+    let genome_string = try_read_genome(HG38_1000)?;
 
     // Run the algs
-    let genome = remap_string(&genome_string);
+    let genome = remap_reference(&genome_string);
 
     // Initialize suffix array, O-table, and C-table
     let suff_and_table_start = Instant::now();
@@ -163,13 +170,12 @@ pub fn log_performance() -> std::io::Result<()> {
     let suff_and_table_time = suff_and_table_start.elapsed().as_nanos();
     println!("Finished generating tables...");
 
-    let search_string_ints =
-        remap_string("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
+    let query = remap_query("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
 
     //search with bwt exact search
     let exact_time_start = Instant::now();
 
-    let (exact_start, exact_end) = bwt_search(&search_string_ints, &o_table, &c_table);
+    let (exact_start, exact_end) = bwt_search(&query, &o_table, &c_table);
 
     let exact_time = exact_time_start.elapsed().as_nanos();
     println!("Finished exact search...");
@@ -189,10 +195,10 @@ pub fn log_performance() -> std::io::Result<()> {
 
     let params = ApproxSearchParams {
         reference: &genome,
-        query: &search_string_ints,
+        query: &query,
         o_table: &o_table,
         c_table: &c_table,
-        o_rev_table: &reverse_o_table,
+        rev_o_table: &reverse_o_table,
         edits: 1,
     };
 
@@ -244,7 +250,7 @@ Approx search took {} ns ({} s) and yielded {} \n
     Total execution time: {} s
     ",
         genome.len(),
-        search_string_ints.len(),
+        query.len(),
         suff_and_table_time,
         suff_and_table_time / 1000000000,
         exact_time,
