@@ -289,10 +289,8 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{try_read_genome, util::remap_reference, HG38_1000, HG38_1000000};
-
     use super::*;
-    use test::Bencher;
+    use crate::util::remap_reference;
 
     const GEN60: &str = "AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGG";
 
@@ -355,28 +353,5 @@ mod tests {
             }
         }
         assert_eq!(naive, sais);
-    }
-
-    #[bench]
-    fn bench_sais_ref1000(b: &mut Bencher) {
-        let genome_string = try_read_genome(HG38_1000).unwrap();
-        let genome = remap_reference(&genome_string);
-        b.iter(|| suffix_array_induced_sort(&genome))
-    }
-
-    #[bench]
-    #[ignore = "reason"]
-    fn bench_sais_ref1000000(b: &mut Bencher) {
-        let genome_string = try_read_genome(HG38_1000000).unwrap();
-        let genome = remap_reference(&genome_string);
-        b.iter(|| suffix_array_induced_sort(&genome))
-    }
-
-    #[bench]
-    #[ignore = "very very slow"]
-    fn bench_naive_ref1000000(b: &mut Bencher) {
-        let genome_string = try_read_genome(HG38_1000000).unwrap();
-        let genome = remap_reference(&genome_string);
-        b.iter(|| construct_suffix_array_naive(&genome))
     }
 }

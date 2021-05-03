@@ -171,10 +171,8 @@ impl<'a> Display for OTable<'a> {
 mod tests {
     use super::OTable;
     use crate::{
-        suffix_array_construction::suffix_array_induced_sort, try_read_genome,
-        util::remap_reference, ALPHABET, HG38_1000,
+        suffix_array_construction::suffix_array_induced_sort, util::remap_reference, ALPHABET,
     };
-    use test::Bencher;
 
     #[test]
     fn test_o_table_shape() {
@@ -220,13 +218,5 @@ mod tests {
         assert_eq!((10, 0), o_table.calc_index(3, 20));
         assert_eq!((10, 1), o_table.calc_index(3, 21));
         assert_eq!((6, 9), o_table.calc_index(2, 29));
-    }
-
-    #[bench]
-    fn bench_o_table_ref1000(b: &mut Bencher) {
-        let genome_string = try_read_genome(HG38_1000).unwrap();
-        let genome = remap_reference(&genome_string);
-        let suffix_array = suffix_array_induced_sort(&genome);
-        b.iter(|| OTable::new(&genome, &suffix_array, 10));
     }
 }

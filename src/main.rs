@@ -1,6 +1,4 @@
-#![feature(test)]
 extern crate bincode;
-extern crate test;
 
 mod approx_search;
 mod exact_search;

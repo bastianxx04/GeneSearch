@@ -49,10 +49,8 @@ mod tests {
     use crate::{
         suffix_array_construction::construct_suffix_array_naive,
         table_gen::generate_c_table,
-        util::{read_and_remap_genome, remap_query, remap_reference},
-        HG38_1000,
+        util::{remap_query, remap_reference},
     };
-    use test::Bencher;
 
     #[test]
     fn test_bwt_search_1_match() {
@@ -112,15 +110,5 @@ mod tests {
         let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
-    }
-
-    #[bench]
-    fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
-        let genome = read_and_remap_genome(HG38_1000);
-        let suffix_array = construct_suffix_array_naive(&genome);
-        let o_table = OTable::new(&genome, &suffix_array, 10);
-        let c_table = generate_c_table(&genome);
-        let query = remap_query("CTCCATCATGTCTTATGGCG");
-        b.iter(|| bwt_search(&query, &o_table, &c_table));
     }
 }

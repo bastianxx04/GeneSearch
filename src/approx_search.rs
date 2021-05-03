@@ -230,10 +230,9 @@ fn inexact_recursion(
 mod tests {
     use super::*;
     use crate::{
-        bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome, remap_reference,
-        suffix_array_construction::suffix_array_induced_sort, util::remap_query, HG38_1000,
+        bwm, bwt, construct_suffix_array_naive, generate_c_table, remap_reference,
+        suffix_array_construction::suffix_array_induced_sort, util::remap_query,
     };
-    use test::Bencher;
 
     #[test]
     fn test_att_with_1_edit() {
@@ -446,23 +445,5 @@ mod tests {
         println!("Actual result: {:?}", results);
 
         assert_eq!(results.len(), 0);
-    }
-
-    #[bench]
-    fn bench_approx_search_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000);
-        let genome = remap_reference(&genome_string);
-        let suffix_array = construct_suffix_array_naive(&genome);
-        let reverse_reference: Vec<u8> = genome.iter().rev().map(|&x| x).collect();
-        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
-        let params = ApproxSearchParams {
-            reference: &genome,
-            query: &remap_query("CTCCATCATGTCTTATGGCG"),
-            o_table: &OTable::new(&genome, &suffix_array, 10),
-            c_table: &generate_c_table(&genome),
-            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
-            edits: 1,
-        };
-        b.iter(|| approx_search(params))
     }
 }
