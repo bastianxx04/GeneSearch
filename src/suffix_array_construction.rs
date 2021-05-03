@@ -133,13 +133,13 @@ fn induce_l_types(
         }
 
         let j = suffix_array[i] - 1;
+        let is_s_type = types[j] as usize;
+        let is_l_type = !types[j] as usize;
 
-        if !types[j] {
-            let c = reference[j] as usize;
-            let bucket_index = bucket_heads[c];
-            suffix_array[bucket_index] = j;
-            bucket_heads[c] += 1;
-        }
+        let c = reference[j] as usize;
+        let bucket_index = bucket_heads[c];
+        suffix_array[bucket_index] = j * is_l_type + suffix_array[bucket_index] * is_s_type;
+        bucket_heads[c] += is_l_type;
     }
 }
 
@@ -157,11 +157,13 @@ fn induce_s_types(
         }
 
         let j = suffix_array[i] - 1;
-        if types[j] {
-            let c = reference[j] as usize;
-            bucket_tails[c] -= 1;
-            suffix_array[bucket_tails[c]] = j;
-        }
+        let is_s_type = types[j] as usize;
+        let is_l_type = !types[j] as usize;
+
+        let c = reference[j] as usize;
+        suffix_array[bucket_tails[c] - 1] =
+            j * is_s_type + suffix_array[bucket_tails[c] - 1] * is_l_type;
+        bucket_tails[c] -= is_s_type;
     }
 }
 
