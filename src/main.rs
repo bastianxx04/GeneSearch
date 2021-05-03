@@ -30,7 +30,7 @@ fn main() {
 
     if args.len() > 1 {
         match args[1].as_str() {
-            "sais" => time_sais(),
+            "sais" => time_sais(args),
             "otable" => time_o_table(args),
             "approx" => time_approx(args),
             "exact" => time_exact(args),
@@ -41,32 +41,56 @@ fn main() {
     }
 }
 
-pub fn time_sais() {
+pub fn time_sais(args: Vec<String>) {
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
     let genome = read_and_remap_genome(HG38_1000000);
 
     let time = Instant::now();
     let sa = suffix_array_induced_sort(&genome);
     let t = time.elapsed();
 
-    println!("SA-IS (length {}) took {} ms", sa.len(), t.as_millis());
+    if output {
+        println!("Suffix array has length {}", sa.len());
+    }
+    println!("{}", t.as_nanos());
 }
 
 pub fn time_o_table(args: Vec<String>) {
     let spacing = args[2].parse::<usize>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
     let file_name = HG38_1000000;
 
     let genome = read_and_remap_genome(file_name);
     let suffix_array = get_sa(file_name, &genome, false);
 
-    let time = Instant::now();
-    let o_table = OTable::new(&genome, &suffix_array, spacing);
-    let t = time.elapsed();
-    println!("{:?}", o_table.shape());
-    println!("{}", t.as_millis());
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let o_table = OTable::new(&genome, &suffix_array, spacing);
+        total += time.elapsed().as_nanos();
+
+        if output {
+            println!("{:?}", o_table.shape())
+        }
+    }
+
+    println!("{}", total / iterations);
 }
 
 pub fn time_approx(args: Vec<String>) {
     let spacing = args[2].parse::<usize>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
     let genome_file_name = HG38_1000000;
 
     let genome = read_genome(genome_file_name);
@@ -107,16 +131,27 @@ pub fn time_approx(args: Vec<String>) {
         edits: 1,
     };
 
-    let time = Instant::now();
-    let results = approx_search(params);
-    let t = time.elapsed();
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let results = approx_search(params);
+        total += time.elapsed().as_nanos();
 
-    println!("{:?}", results);
-    println!("{}", t.as_nanos());
+        if output {
+            println!("{:?}", results);
+        }
+    }
+
+    println!("{}", total / iterations);
 }
 
 pub fn time_exact(args: Vec<String>) {
     let spacing = args[2].parse::<usize>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
     let file_name = HG38_1000000;
 
     // TODO: Tag et faktisk read i stedet for denne string
@@ -127,12 +162,18 @@ pub fn time_exact(args: Vec<String>) {
     let o_table = get_o_table(file_name, &genome, &suffix_array, spacing, false);
     let c_table = generate_c_table(&genome);
 
-    let time = Instant::now();
-    let result = bwt_search(&query, &o_table, &c_table);
-    let t = time.elapsed();
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let result = bwt_search(&query, &o_table, &c_table);
+        total += time.elapsed().as_nanos();
 
-    println!("{:?}", result);
-    println!("{}", t.as_nanos());
+        if output {
+            println!("{:?}", result);
+        }
+    }
+
+    println!("{}", total / iterations);
 }
 
 pub fn log_performance() -> std::io::Result<()> {
