@@ -47,78 +47,80 @@ pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]
 mod tests {
     use super::*;
     use crate::{
-        construct_suffix_array_naive, generate_c_table, read_genome, remap_string, HG38_1000,
+        suffix_array_construction::construct_suffix_array_naive,
+        table_gen::generate_c_table,
+        util::{read_and_remap_genome, remap_query, remap_reference},
+        HG38_1000,
     };
     use test::Bencher;
 
     #[test]
     fn test_bwt_search_1_match() {
-        let reference = remap_string("CATTGA$");
+        let reference = remap_reference("CATTGA");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = OTable::new(&reference, &suffix_array, 10);
         let c_table = generate_c_table(&reference);
-        let search_string = remap_string("ATT");
-        let search_result = bwt_search(&search_string, &o_table, &c_table);
+        let query = remap_query("ATT");
+        let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert_eq!((2, 2), search_result);
     }
 
     #[test]
     fn test_bwt_search_banana() {
-        let reference = remap_string("CAGAGA$");
+        let reference = remap_reference("CAGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = OTable::new(&reference, &suffix_array, 10);
         let c_table = generate_c_table(&reference);
-        let search_string = remap_string("AGA");
-        let search_result = bwt_search(&search_string, &o_table, &c_table);
+        let query = remap_query("AGA");
+        let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
     }
 
     #[test]
     fn test_bwt_search_2_matches() {
-        let reference = remap_string("AGAGA$");
+        let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = OTable::new(&reference, &suffix_array, 10);
         let c_table = generate_c_table(&reference);
-        let search_string = remap_string("AGA");
-        let search_result = bwt_search(&search_string, &o_table, &c_table);
+        let query = remap_query("AGA");
+        let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert_eq!((2, 3), search_result);
     }
 
     #[test]
     fn test_bwt_search_0_matches() {
-        let reference = remap_string("AGAGA$");
+        let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = OTable::new(&reference, &suffix_array, 10);
         let c_table = generate_c_table(&reference);
-        let search_string = remap_string("ACA");
-        let search_result = bwt_search(&search_string, &o_table, &c_table);
+        let query = remap_query("ACA");
+        let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
     }
 
     #[test]
     fn test_bwt_search_query_longer_than_reference() {
-        let reference = remap_string("AGAGA$");
+        let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
         let o_table = OTable::new(&reference, &suffix_array, 10);
         let c_table = generate_c_table(&reference);
-        let search_string = remap_string("ACAAGAGAGA");
-        let search_result = bwt_search(&search_string, &o_table, &c_table);
+        let query = remap_query("ACAAGAGAGA");
+        let search_result = bwt_search(&query, &o_table, &c_table);
 
         assert!(search_result.0 > search_result.1);
     }
 
     #[bench]
     fn bench_bwt_search_ref1000_query20(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome = read_and_remap_genome(HG38_1000);
         let suffix_array = construct_suffix_array_naive(&genome);
         let o_table = OTable::new(&genome, &suffix_array, 10);
         let c_table = generate_c_table(&genome);
-        let query = remap_string("CTCCATCATGTCTTATGGCG");
+        let query = remap_query("CTCCATCATGTCTTATGGCG");
         b.iter(|| bwt_search(&query, &o_table, &c_table));
     }
 }

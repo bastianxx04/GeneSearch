@@ -289,23 +289,23 @@ pub fn construct_suffix_array_naive(reference: &[u8]) -> SuffixArray {
 
 #[cfg(test)]
 mod tests {
-    use crate::{read_genome, util::remap_string, HG38_1000, HG38_1000000};
+    use crate::{try_read_genome, util::remap_reference, HG38_1000, HG38_1000000};
 
     use super::*;
     use test::Bencher;
 
-    const GEN60: &str = "AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGG$";
+    const GEN60: &str = "AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGG";
 
     #[test]
     fn test_type_map() {
-        let reference = remap_string("ACATGA$");
+        let reference = remap_reference("ACATGA");
         let types = build_type_array(&reference);
         assert_eq!(vec![true, false, true, false, false, false, true], types);
     }
 
     #[test]
     fn test_sais_mmiissiissiippii() {
-        let reference = remap_string("CCAATTAATTAAGGAA$");
+        let reference = remap_reference("CCAATTAATTAAGGAA");
         let sa = suffix_array_induced_sort(&reference);
         assert_eq!(
             vec![16, 15, 14, 10, 6, 2, 11, 7, 3, 1, 0, 13, 12, 9, 5, 8, 4],
@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn test_sais_aaa() {
-        let reference = remap_string("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA$");
+        let reference = remap_reference("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         let sa = suffix_array_induced_sort(&reference);
         println!("{:?}", sa);
         assert_eq!(320, sa.len());
@@ -324,14 +324,14 @@ mod tests {
     #[test]
     fn test_sais_cacag() {
         // CACAG isn't instantly turned into a suffix array by the first induced sort
-        let reference = remap_string("CACAG$");
+        let reference = remap_reference("CACAG");
         let sa = suffix_array_induced_sort(&reference);
         assert_eq!(vec![5, 1, 3, 0, 2, 4], sa);
     }
 
     #[test]
     fn test_sais_compare_naive_mmiissiissiippii() {
-        let genome = remap_string("CCAATTAATTAAGGAA$");
+        let genome = remap_reference("CCAATTAATTAAGGAA");
         let naive = construct_suffix_array_naive(&genome);
         let sais = suffix_array_induced_sort(&genome);
         for i in 0..sais.len() {
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_sais_compare_naive() {
-        let genome = remap_string(GEN60);
+        let genome = remap_reference(GEN60);
         let naive = construct_suffix_array_naive(&genome);
         let sais = suffix_array_induced_sort(&genome);
         for i in 0..sais.len() {
@@ -359,24 +359,24 @@ mod tests {
 
     #[bench]
     fn bench_sais_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome_string = try_read_genome(HG38_1000).unwrap();
+        let genome = remap_reference(&genome_string);
         b.iter(|| suffix_array_induced_sort(&genome))
     }
 
     #[bench]
     #[ignore = "reason"]
     fn bench_sais_ref1000000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome_string = try_read_genome(HG38_1000000).unwrap();
+        let genome = remap_reference(&genome_string);
         b.iter(|| suffix_array_induced_sort(&genome))
     }
 
     #[bench]
     #[ignore = "very very slow"]
     fn bench_naive_ref1000000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome_string = try_read_genome(HG38_1000000).unwrap();
+        let genome = remap_reference(&genome_string);
         b.iter(|| construct_suffix_array_naive(&genome))
     }
 }

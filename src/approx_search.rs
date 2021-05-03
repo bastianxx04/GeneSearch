@@ -11,7 +11,7 @@ pub struct ApproxSearchParams<'a> {
     pub query: &'a [u8],
     pub o_table: &'a OTable<'a>,
     pub c_table: &'a CTable,
-    pub o_rev_table: &'a OTable<'a>,
+    pub rev_o_table: &'a OTable<'a>,
     pub edits: usize,
 }
 
@@ -21,7 +21,7 @@ pub fn approx_search(params: ApproxSearchParams) -> HashSet<(usize, usize, Strin
         params.reference,
         params.query,
         params.c_table,
-        params.o_rev_table,
+        params.rev_o_table,
     );
     let o_table = params.o_table;
     let c_table = params.c_table;
@@ -230,14 +230,14 @@ fn inexact_recursion(
 mod tests {
     use super::*;
     use crate::{
-        bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome, remap_string,
-        HG38_1000,
+        bwm, bwt, construct_suffix_array_naive, generate_c_table, read_genome, remap_reference,
+        suffix_array_construction::suffix_array_induced_sort, util::remap_query, HG38_1000,
     };
     use test::Bencher;
 
     #[test]
     fn test_att_with_1_edit() {
-        let reference = remap_string::<u8>("AGATAGATTCACA$");
+        let reference = remap_reference::<u8>("AGATAGATTCACA");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -246,10 +246,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("ATT"),
+            query: &remap_query("ATT"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -279,32 +279,33 @@ mod tests {
 
     #[test]
     fn test_att_with_0_edit() {
-        let reference = remap_string("AGATAGATTCACA$");
-        let suffix_array = construct_suffix_array_naive(&reference);
+        let genome = "AGATAGATTCACA";
+        let remap_genome = remap_reference(genome);
+        let suffix_array = suffix_array_induced_sort(&remap_genome);
 
-        let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
-
-        let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
+        let rev_genome: String = genome.chars().rev().collect();
+        let rev_remap_genome = remap_reference(&rev_genome);
+        let rev_suffix_array = suffix_array_induced_sort(&rev_remap_genome);
 
         let params = ApproxSearchParams {
-            reference: &reference,
-            query: &remap_string("ATT"),
-            o_table: &OTable::new(&reference, &suffix_array, 10),
-            c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            reference: &remap_genome,
+            query: &remap_query("ATT"),
+            o_table: &OTable::new(&remap_genome, &suffix_array, 10),
+            c_table: &generate_c_table(&remap_genome),
+            rev_o_table: &OTable::new(&rev_remap_genome, &rev_suffix_array, 10),
             edits: 0,
         };
 
         let search_result = approx_search(params);
         println!("Actual result: {:?}", search_result);
 
-        assert_eq!(search_result.len(), 1);
+        assert_eq!(1, search_result.len());
         assert!(search_result.contains(&(6, 7, String::from("MMM"), 0)));
     }
 
     #[test]
     fn test_simple() {
-        let reference = remap_string("AAC$");
+        let reference = remap_reference("AAC");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -313,10 +314,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("ACC"),
+            query: &remap_query("ACC"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -330,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_substitute() {
-        let reference = remap_string("ACG$");
+        let reference = remap_reference("ACG");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -339,10 +340,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("AGG"),
+            query: &remap_query("AGG"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -355,7 +356,7 @@ mod tests {
 
     #[test]
     fn test_delete() {
-        let reference = remap_string("TACGT$");
+        let reference = remap_reference("TACGT");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -364,10 +365,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("TAGT"),
+            query: &remap_query("TAGT"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -390,7 +391,7 @@ mod tests {
 
     #[test]
     fn test_insert() {
-        let reference = remap_string("AC$");
+        let reference = remap_reference("AC");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -399,10 +400,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("ACG"),
+            query: &remap_query("ACG"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -425,7 +426,7 @@ mod tests {
 
     #[test]
     fn test_too_long_query() {
-        let reference = remap_string("ACGT$");
+        let reference = remap_reference("ACGT");
         let suffix_array = construct_suffix_array_naive(&reference);
 
         let reverse_reference: Vec<u8> = reference.iter().rev().map(|&x| x).collect();
@@ -434,10 +435,10 @@ mod tests {
 
         let params = ApproxSearchParams {
             reference: &reference,
-            query: &remap_string("ACGTGTGT"),
+            query: &remap_query("ACGTGTGT"),
             o_table: &OTable::new(&reference, &suffix_array, 10),
             c_table: &generate_c_table(&reference),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
 
@@ -449,17 +450,17 @@ mod tests {
 
     #[bench]
     fn bench_approx_search_ref1000(b: &mut Bencher) {
-        let genome_string = read_genome(HG38_1000).unwrap();
-        let genome = remap_string(&genome_string);
+        let genome_string = read_genome(HG38_1000);
+        let genome = remap_reference(&genome_string);
         let suffix_array = construct_suffix_array_naive(&genome);
         let reverse_reference: Vec<u8> = genome.iter().rev().map(|&x| x).collect();
         let reverse_suffix_array = construct_suffix_array_naive(&reverse_reference);
         let params = ApproxSearchParams {
             reference: &genome,
-            query: &remap_string("CTCCATCATGTCTTATGGCG"),
+            query: &remap_query("CTCCATCATGTCTTATGGCG"),
             o_table: &OTable::new(&genome, &suffix_array, 10),
             c_table: &generate_c_table(&genome),
-            o_rev_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
+            rev_o_table: &OTable::new(&reverse_reference, &reverse_suffix_array, 10),
             edits: 1,
         };
         b.iter(|| approx_search(params))

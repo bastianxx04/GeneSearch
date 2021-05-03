@@ -12,3 +12,9 @@ Cargo.lock
 /results/
 
 /.vscode/
+
+# Ignore all files, but keep the folder structure
+/resources/otable/**
+!/resources/otable/.gitkeep
+/resources/sa/**
+!/resources/sa/.gitkeep
