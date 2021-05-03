@@ -2,7 +2,7 @@
 
 ## Git branches
 
-master
+main
 otable-nosentinelrow
 otable-nosentinelrow-branchlessconstruction
 otable-noskips
