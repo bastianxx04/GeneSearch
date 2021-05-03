@@ -9,7 +9,6 @@ use std::{
 pub struct OTable<'a> {
     array: Vec<usize>,
     spacing: usize,
-    sentinel: usize,
     string: &'a [u8],
     suffix_array: &'a [usize],
 }
@@ -17,29 +16,23 @@ pub struct OTable<'a> {
 impl<'a> OTable<'a> {
     /// Allocate and generate an O-table.
     pub fn new(string: &'a [u8], suffix_array: &'a [usize], spacing: usize) -> Self {
-        let array_len = ((string.len() / spacing) + 1) * (ALPHABET.len() - 1);
+        let array_len = ((string.len() / spacing) + 1) * ALPHABET.len();
         let mut o_table = OTable {
             array: vec![0; array_len],
             spacing,
-            sentinel: usize::MAX,
             string,
             suffix_array,
         };
 
         // Fill O-table
-        let (_, cols) = o_table.internal_shape();
-        let mut counter = vec![0; 4];
+        let (_, cols) = o_table.shape();
+        let mut counter = vec![0; 5];
         for i in 1..cols {
             let c = bwt(o_table.string, o_table.suffix_array, i - 1);
-            if c == 0 {
-                o_table.sentinel = i;
-            } else {
-                counter[(c - 1) as usize] += 1;
-            }
-
+            counter[c as usize] += 1;
             if i % spacing == 0 {
                 for (a, &c) in counter.iter().enumerate() {
-                    o_table.set((a + 1) as u8, i, c);
+                    o_table.set(a as u8, i, c);
                 }
             }
         }
@@ -59,12 +52,10 @@ impl<'a> OTable<'a> {
         match File::open(&otable_path) {
             Ok(f) => {
                 let buf_reader = BufReader::new(f);
-                let mut decoded: Vec<usize> = bincode::deserialize_from(buf_reader).unwrap();
-                let sentinel = decoded.pop().unwrap(); // Tjek om decoded size ændrer sig
+                let decoded: Vec<usize> = bincode::deserialize_from(buf_reader).unwrap();
                 OTable {
                     array: decoded,
                     spacing,
-                    sentinel,
                     string: &string,
                     suffix_array: &suffix_array,
                 }
@@ -72,8 +63,7 @@ impl<'a> OTable<'a> {
             Err(_) => {
                 // File doesn't exist, generate it
                 let o_table = OTable::new(&string, &suffix_array, spacing);
-                let mut array = o_table.array.clone();
-                array.push(o_table.sentinel);
+                let array = o_table.array.clone();
                 let bytes: Vec<u8> = bincode::serialize(&array).unwrap();
                 let mut file = File::create(&otable_path).unwrap();
                 file.write_all(&bytes).unwrap();
@@ -87,8 +77,8 @@ impl<'a> OTable<'a> {
     /// - the first is the index into the internal array
     /// - the second is the remaining lines to count the character in
     fn calc_index(&self, a: u8, i: usize) -> (usize, usize) {
-        let a = (a - 1) as usize;
-        let (rows, cols) = self.internal_shape();
+        let a = a as usize;
+        let (rows, cols) = self.shape();
 
         if a >= rows || i >= cols {
             panic!(
@@ -96,13 +86,9 @@ impl<'a> OTable<'a> {
                 a, i, rows, cols,
             )
         }
-        let offset = (self.array.len() / (ALPHABET.len() - 1)) * a;
+        let offset = a * self.array.len() / ALPHABET.len();
 
         (offset + i / self.spacing, i % self.spacing)
-    }
-
-    fn internal_shape(&self) -> (usize, usize) {
-        (ALPHABET.len() - 1, self.string.len() + 1)
     }
 
     pub fn shape(&self) -> (usize, usize) {
@@ -121,9 +107,6 @@ impl<'a> OTable<'a> {
     }
 
     pub fn get(&self, a: u8, i: usize) -> usize {
-        if a == 0 {
-            return (i >= self.sentinel) as usize;
-        }
         match self.calc_index(a, i) {
             (idx, 0) => self.array[idx],
             (idx, _) => self.array[idx] + self.find_count(i - (i % self.spacing), i, a),
@@ -131,9 +114,6 @@ impl<'a> OTable<'a> {
     }
 
     fn set(&mut self, a: u8, i: usize, v: usize) {
-        if a == 0 {
-            return;
-        }
         match self.calc_index(a, i) {
             (idx, 0) => self.array[idx] = v,
             _ => todo!(),
@@ -213,10 +193,12 @@ mod tests {
         let reference = remap_reference("ACGTATCGTGACGGGCTATAGCGATGTCGATGC");
         let sa = suffix_array_induced_sort(&reference);
         let o_table = OTable::new(&reference, &sa, 10);
-        assert_eq!((0, 0), o_table.calc_index(1, 0));
-        assert_eq!((1, 3), o_table.calc_index(1, 13));
-        assert_eq!((10, 0), o_table.calc_index(3, 20));
-        assert_eq!((10, 1), o_table.calc_index(3, 21));
-        assert_eq!((6, 9), o_table.calc_index(2, 29));
+        assert_eq!((0, 0), o_table.calc_index(0, 0));
+        assert_eq!((1, 6), o_table.calc_index(0, 16));
+        assert_eq!((4, 0), o_table.calc_index(1, 0));
+        assert_eq!((5, 3), o_table.calc_index(1, 13));
+        assert_eq!((14, 0), o_table.calc_index(3, 20));
+        assert_eq!((14, 1), o_table.calc_index(3, 21));
+        assert_eq!((10, 9), o_table.calc_index(2, 29));
     }
 }
