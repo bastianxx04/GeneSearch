@@ -61,7 +61,7 @@ pub fn time_o_table(args: Vec<String>) {
     let time = Instant::now();
     let o_table = OTable::new(&genome, &suffix_array, spacing);
     let t = time.elapsed();
-    println!("{}", o_table);
+    println!("{:?}", o_table.shape());
     println!("{}", t.as_millis());
 }
 
