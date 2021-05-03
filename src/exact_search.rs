@@ -56,7 +56,8 @@ mod tests {
     fn test_bwt_search_1_match() {
         let reference = remap_reference("CATTGA");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = OTable::new(&reference, &suffix_array, 10);
+        let o_table = OTable::new(&reference, &suffix_array);
+        println!("{}", o_table);
         let c_table = generate_c_table(&reference);
         let query = remap_query("ATT");
         let search_result = bwt_search(&query, &o_table, &c_table);
@@ -68,7 +69,7 @@ mod tests {
     fn test_bwt_search_banana() {
         let reference = remap_reference("CAGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = OTable::new(&reference, &suffix_array, 10);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let query = remap_query("AGA");
         let search_result = bwt_search(&query, &o_table, &c_table);
@@ -80,7 +81,7 @@ mod tests {
     fn test_bwt_search_2_matches() {
         let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = OTable::new(&reference, &suffix_array, 10);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let query = remap_query("AGA");
         let search_result = bwt_search(&query, &o_table, &c_table);
@@ -92,7 +93,7 @@ mod tests {
     fn test_bwt_search_0_matches() {
         let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = OTable::new(&reference, &suffix_array, 10);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let query = remap_query("ACA");
         let search_result = bwt_search(&query, &o_table, &c_table);
@@ -104,7 +105,7 @@ mod tests {
     fn test_bwt_search_query_longer_than_reference() {
         let reference = remap_reference("AGAGA");
         let suffix_array = construct_suffix_array_naive(&reference);
-        let o_table = OTable::new(&reference, &suffix_array, 10);
+        let o_table = OTable::new(&reference, &suffix_array);
         let c_table = generate_c_table(&reference);
         let query = remap_query("ACAAGAGAGA");
         let search_result = bwt_search(&query, &o_table, &c_table);

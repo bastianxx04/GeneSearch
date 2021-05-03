@@ -169,9 +169,8 @@ pub fn get_o_table<'a>(
     file_name: &str,
     genome: &'a [u8],
     suffix_array: &'a [usize],
-    spacing: usize,
     rev: bool,
 ) -> OTable<'a> {
     let file_name = &format!("{}{}", file_name, if rev { "_rev" } else { "" });
-    OTable::from_file(file_name, genome, suffix_array, spacing)
+    OTable::from_file(file_name, genome, suffix_array)
 }

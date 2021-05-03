@@ -60,8 +60,7 @@ pub fn time_sais(args: Vec<String>) {
 
 pub fn time_o_table(args: Vec<String>) {
     let genome_file_name = &args[2];
-    let spacing = args[3].parse::<usize>().unwrap();
-    let iterations = args[4].parse::<u128>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -73,7 +72,7 @@ pub fn time_o_table(args: Vec<String>) {
     let mut total = 0;
     for _ in 0..iterations {
         let time = Instant::now();
-        let o_table = OTable::new(&genome, &suffix_array, spacing);
+        let o_table = OTable::new(&genome, &suffix_array);
         total += time.elapsed().as_nanos();
 
         if output {
@@ -87,8 +86,7 @@ pub fn time_o_table(args: Vec<String>) {
 pub fn time_approx(args: Vec<String>) {
     let genome_file_name = &args[2];
     let reads_file_name = &args[3];
-    let spacing = args[4].parse::<usize>().unwrap();
-    let iterations = args[5].parse::<u128>().unwrap();
+    let iterations = args[4].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -98,13 +96,7 @@ pub fn time_approx(args: Vec<String>) {
     let remapped_genome = remap_reference(&genome);
 
     let suffix_array = get_sa(genome_file_name, &remapped_genome, false);
-    let o_table = get_o_table(
-        genome_file_name,
-        &remapped_genome,
-        &suffix_array,
-        spacing,
-        false,
-    );
+    let o_table = get_o_table(genome_file_name, &remapped_genome, &suffix_array, false);
     let c_table = generate_c_table(&remapped_genome);
 
     let reverse_genome: String = genome.chars().rev().collect();
@@ -116,7 +108,6 @@ pub fn time_approx(args: Vec<String>) {
         &genome_file_name,
         &reverse_remapped,
         &reverse_suffix_array,
-        spacing,
         true,
     );
 
@@ -149,8 +140,7 @@ pub fn time_approx(args: Vec<String>) {
 
 pub fn time_exact(args: Vec<String>) {
     let genome_file_name = &args[2];
-    let spacing = args[3].parse::<usize>().unwrap();
-    let iterations = args[4].parse::<u128>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -161,7 +151,7 @@ pub fn time_exact(args: Vec<String>) {
 
     let genome = read_and_remap_genome(genome_file_name);
     let suffix_array = get_sa(genome_file_name, &genome, false);
-    let o_table = get_o_table(genome_file_name, &genome, &suffix_array, spacing, false);
+    let o_table = get_o_table(genome_file_name, &genome, &suffix_array, false);
     let c_table = generate_c_table(&genome);
 
     let mut total = 0;
@@ -205,7 +195,7 @@ pub fn log_performance() -> std::io::Result<()> {
 
     let suffix_array = suffix_array_induced_sort(&genome);
 
-    let o_table = OTable::new(&genome, &suffix_array, 10);
+    let o_table = OTable::new(&genome, &suffix_array);
     let c_table = generate_c_table(&genome);
 
     let suff_and_table_time = suff_and_table_start.elapsed().as_nanos();
@@ -232,7 +222,7 @@ pub fn log_performance() -> std::io::Result<()> {
     let mut reverse_genome = genome.clone();
     reverse_genome.reverse();
     let reverse_suffix_array = construct_suffix_array_naive(&reverse_genome);
-    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array, 10);
+    let reverse_o_table = OTable::new(&reverse_genome, &reverse_suffix_array);
 
     let params = ApproxSearchParams {
         reference: &genome,
