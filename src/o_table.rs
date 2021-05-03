@@ -31,11 +31,10 @@ impl<'a> OTable<'a> {
         let mut counter = vec![0; 4];
         for i in 1..cols {
             let c = bwt(o_table.string, o_table.suffix_array, i - 1);
-            if c == 0 {
-                o_table.sentinel = i;
-            } else {
-                counter[(c - 1) as usize] += 1;
-            }
+            let is_sentinel = (c == 0) as usize;
+            let not_sentinel = (c != 0) as usize;
+            o_table.sentinel = i * is_sentinel + o_table.sentinel * not_sentinel;
+            counter[(c as usize) - not_sentinel] += not_sentinel;
 
             if i % spacing == 0 {
                 for (a, &c) in counter.iter().enumerate() {
