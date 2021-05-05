@@ -22,7 +22,6 @@ use types::*;
 use util::*;
 
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
-const HG38_1000000: &str = "hg38-1000000";
 const HG38_1000: &str = "hg38-1000";
 
 fn main() {
@@ -42,11 +41,12 @@ fn main() {
 }
 
 pub fn time_sais(args: Vec<String>) {
+    let genome_file_name = &args[2];
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
-    let genome = read_and_remap_genome(HG38_1000000);
+    let genome = read_and_remap_genome(genome_file_name);
 
     let time = Instant::now();
     let sa = suffix_array_induced_sort(&genome);
@@ -59,16 +59,16 @@ pub fn time_sais(args: Vec<String>) {
 }
 
 pub fn time_o_table(args: Vec<String>) {
-    let spacing = args[2].parse::<usize>().unwrap();
-    let iterations = args[3].parse::<u128>().unwrap();
+    let genome_file_name = &args[2];
+    let spacing = args[3].parse::<usize>().unwrap();
+    let iterations = args[4].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
-    let file_name = HG38_1000000;
 
-    let genome = read_and_remap_genome(file_name);
-    let suffix_array = get_sa(file_name, &genome, false);
+    let genome = read_and_remap_genome(genome_file_name);
+    let suffix_array = get_sa(genome_file_name, &genome, false);
 
     let mut total = 0;
     for _ in 0..iterations {
@@ -85,13 +85,14 @@ pub fn time_o_table(args: Vec<String>) {
 }
 
 pub fn time_approx(args: Vec<String>) {
-    let spacing = args[2].parse::<usize>().unwrap();
-    let iterations = args[3].parse::<u128>().unwrap();
+    let genome_file_name = &args[2];
+    let reads_file_name = &args[3];
+    let spacing = args[4].parse::<usize>().unwrap();
+    let iterations = args[5].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
-    let genome_file_name = HG38_1000000;
 
     let genome = read_genome(genome_file_name);
     let remapped_genome = remap_reference(&genome);
@@ -119,47 +120,48 @@ pub fn time_approx(args: Vec<String>) {
         true,
     );
 
-    // TODO: Tag et faktisk read i stedet for denne string
-    let query = remap_query("AATAAACCTTACCTAGCA");
-
-    let params = ApproxSearchParams {
-        reference: &remapped_genome,
-        query: &query,
-        o_table: &o_table,
-        c_table: &c_table,
-        rev_o_table: &reverse_o_table,
-        edits: 1,
-    };
-
     let mut total = 0;
-    for _ in 0..iterations {
-        let time = Instant::now();
-        let results = approx_search(params);
-        total += time.elapsed().as_nanos();
 
-        if output {
-            println!("{:?}", results);
+    let reads = read_and_remap_reads(reads_file_name).unwrap();
+    for read in &reads {
+        let params = ApproxSearchParams {
+            reference: &remapped_genome,
+            query: read,
+            o_table: &o_table,
+            c_table: &c_table,
+            rev_o_table: &reverse_o_table,
+            edits: 1,
+        };
+
+        for _ in 0..iterations {
+            let time = Instant::now();
+            let results = approx_search(params);
+            total += time.elapsed().as_nanos();
+
+            if output {
+                println!("{:?}", results);
+            }
         }
     }
 
-    println!("{}", total / iterations);
+    println!("{}", total / (iterations * reads.len() as u128));
 }
 
 pub fn time_exact(args: Vec<String>) {
-    let spacing = args[2].parse::<usize>().unwrap();
-    let iterations = args[3].parse::<u128>().unwrap();
+    let genome_file_name = &args[2];
+    let spacing = args[3].parse::<usize>().unwrap();
+    let iterations = args[4].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
-    let file_name = HG38_1000000;
 
     // TODO: Tag et faktisk read i stedet for denne string
     let query = remap_query("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
 
-    let genome = read_and_remap_genome(file_name);
-    let suffix_array = get_sa(file_name, &genome, false);
-    let o_table = get_o_table(file_name, &genome, &suffix_array, spacing, false);
+    let genome = read_and_remap_genome(genome_file_name);
+    let suffix_array = get_sa(genome_file_name, &genome, false);
+    let o_table = get_o_table(genome_file_name, &genome, &suffix_array, spacing, false);
     let c_table = generate_c_table(&genome);
 
     let mut total = 0;
