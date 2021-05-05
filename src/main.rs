@@ -60,8 +60,8 @@ pub fn time_sais(args: Vec<String>) {
 
 pub fn time_o_table(args: Vec<String>) {
     let genome_file_name = &args[2];
-    let spacing = args[3].parse::<usize>().unwrap();
-    let iterations = args[4].parse::<u128>().unwrap();
+    let iterations = args[3].parse::<u128>().unwrap();
+    let spacing = args[4].parse::<usize>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -87,8 +87,8 @@ pub fn time_o_table(args: Vec<String>) {
 pub fn time_approx(args: Vec<String>) {
     let genome_file_name = &args[2];
     let reads_file_name = &args[3];
-    let spacing = args[4].parse::<usize>().unwrap();
-    let iterations = args[5].parse::<u128>().unwrap();
+    let iterations = args[4].parse::<u128>().unwrap();
+    let spacing = args[5].parse::<usize>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -150,8 +150,8 @@ pub fn time_approx(args: Vec<String>) {
 pub fn time_exact(args: Vec<String>) {
     let genome_file_name = &args[2];
     let reads_file_name = &args[3];
-    let spacing = args[4].parse::<usize>().unwrap();
-    let iterations = args[5].parse::<u128>().unwrap();
+    let iterations = args[4].parse::<u128>().unwrap();
+    let spacing = args[5].parse::<usize>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
