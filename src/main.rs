@@ -149,15 +149,13 @@ pub fn time_approx(args: Vec<String>) {
 
 pub fn time_exact(args: Vec<String>) {
     let genome_file_name = &args[2];
-    let spacing = args[3].parse::<usize>().unwrap();
-    let iterations = args[4].parse::<u128>().unwrap();
+    let reads_file_name = &args[3];
+    let spacing = args[4].parse::<usize>().unwrap();
+    let iterations = args[5].parse::<u128>().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
-
-    // TODO: Tag et faktisk read i stedet for denne string
-    let query = remap_query("AATAAACCTTACCTAGCACTCCATCATGTCTTATGGCGCGTGATTTGCCCCGGACTCAGGCAAAACCC");
 
     let genome = read_and_remap_genome(genome_file_name);
     let suffix_array = get_sa(genome_file_name, &genome, false);
@@ -165,13 +163,16 @@ pub fn time_exact(args: Vec<String>) {
     let c_table = generate_c_table(&genome);
 
     let mut total = 0;
-    for _ in 0..iterations {
-        let time = Instant::now();
-        let result = bwt_search(&query, &o_table, &c_table);
-        total += time.elapsed().as_nanos();
+    let reads = read_and_remap_reads(reads_file_name).unwrap();
+    for read in &reads {
+        for _ in 0..iterations {
+            let time = Instant::now();
+            let result = bwt_search(read, &o_table, &c_table);
+            total += time.elapsed().as_nanos();
 
-        if output {
-            println!("{:?}", result);
+            if output {
+                println!("{:?}", result);
+            }
         }
     }
 
