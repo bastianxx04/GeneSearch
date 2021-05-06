@@ -42,20 +42,25 @@ fn main() {
 
 pub fn time_sais(args: Vec<String>) {
     let genome_file_name = &args[2];
+    let iterations: u128 = args[3].parse().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
         .is_none();
     let genome = read_and_remap_genome(genome_file_name);
 
-    let time = Instant::now();
-    let sa = suffix_array_induced_sort(&genome);
-    let t = time.elapsed();
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let sa = suffix_array_induced_sort(&genome);
+        total += time.elapsed().as_nanos();
 
-    if output {
-        println!("Suffix array has length {}", sa.len());
+        if output {
+            println!("Suffix array has length {}", sa.len());
+        }
     }
-    println!("{}", t.as_nanos());
+
+    println!("{}", total / iterations);
 }
 
 pub fn time_o_table(args: Vec<String>) {
