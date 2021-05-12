@@ -7,9 +7,10 @@ use crate::suffix_array_construction::{
 use crate::types::SuffixArray;
 use crate::ALPHABET;
 use num::{NumCast, Unsigned};
-use std::fs::File;
+use seq_io::fastq::Reader;
 use std::io::{BufReader, Read, Write};
 use std::path::Path;
+use std::{fs::File, io::Result};
 
 pub fn remap_reference<T: Unsigned + NumCast>(s: &str) -> Vec<T> {
     let mut remapped = remap_query(s);
@@ -87,7 +88,7 @@ pub fn print_sais_buckets(suffix_array: &[usize], bucket_sizes: &[usize], i: usi
     println!();
 }
 
-pub fn try_read_genome(file_name: &str) -> std::io::Result<String> {
+pub fn try_read_genome(file_name: &str) -> Result<String> {
     let mut path = Path::new("resources/genomes/").join(file_name);
     path.set_extension("fa");
     let genome_file = File::open(path)?;
@@ -117,6 +118,28 @@ where
     };
 
     remap_reference(&genome)
+}
+
+pub fn read_and_remap_reads(file_name: &str) -> Result<Vec<Vec<u8>>> {
+    // Get full file path
+    let mut path = Path::new("resources/reads/").join(file_name);
+    path.set_extension("fq");
+
+    // Parse file
+    let reads_file = File::open(path)?;
+    let file_reader = BufReader::new(reads_file);
+    let mut parser = Reader::new(file_reader);
+
+    Ok(parser
+        .records()
+        .map(|result| result.unwrap())
+        .map(|record| record.seq)
+        .map(|seq| {
+            let mut s = String::new();
+            seq.iter().for_each(|&c| s.push(c as char));
+            remap_query(&s)
+        })
+        .collect())
 }
 
 pub fn get_sa(file_name: &str, genome: &[u8], rev: bool) -> SuffixArray {
