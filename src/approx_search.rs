@@ -231,7 +231,7 @@ mod tests {
     use super::*;
     use crate::{
         bwm, bwt, construct_suffix_array_naive, generate_c_table, remap_reference,
-        suffix_array_construction::suffix_array_induced_sort, util::remap_query,
+        sais::suffix_array_induced_sort, util::remap_query,
     };
 
     #[test]

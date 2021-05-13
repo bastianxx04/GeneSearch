@@ -150,9 +150,7 @@ impl<'a> Display for OTable<'a> {
 #[cfg(test)]
 mod tests {
     use super::OTable;
-    use crate::{
-        suffix_array_construction::suffix_array_induced_sort, util::remap_reference, ALPHABET,
-    };
+    use crate::{sais::suffix_array_induced_sort, util::remap_reference, ALPHABET};
 
     #[test]
     fn test_o_table_shape() {

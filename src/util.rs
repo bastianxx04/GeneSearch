@@ -1,9 +1,7 @@
 #![allow(dead_code)]
 
 use crate::o_table::OTable;
-use crate::suffix_array_construction::{
-    find_bucket_heads, find_bucket_tails, suffix_array_induced_sort,
-};
+use crate::sais::{find_bucket_heads, find_bucket_tails, suffix_array_induced_sort};
 use crate::types::SuffixArray;
 use crate::ALPHABET;
 use num::{NumCast, Unsigned};
