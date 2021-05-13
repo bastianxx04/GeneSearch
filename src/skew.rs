@@ -111,9 +111,9 @@ fn collect_alphabet(reference: &[u8], idx: &[usize]) -> TripletMap {
     return alpha;
 }
 
-fn less(x: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
-    let a = safe_idx(x, i);
-    let b = safe_idx(x, j);
+fn less(reference: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
+    let a = safe_idx(reference, i);
+    let b = safe_idx(reference, j);
     if a < b {
         return true;
     }
@@ -123,7 +123,7 @@ fn less(x: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
     if i % 3 != 0 && j % 3 != 0 {
         return isa[&i] < isa[&j];
     }
-    less(x, i + 1, j + 1, isa)
+    less(reference, i + 1, j + 1, isa)
 }
 
 fn merge(reference: &[u8], sa12: Vec<usize>, sa3: Vec<usize>) -> Vec<usize> {

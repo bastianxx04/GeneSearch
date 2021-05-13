@@ -15,6 +15,7 @@ use chrono::Local;
 use exact_search::bwt_search;
 use o_table::OTable;
 use sais::suffix_array_induced_sort;
+use skew::skew;
 use std::fs::{create_dir, File};
 use std::io::Write;
 use std::path::Path;
@@ -33,6 +34,8 @@ fn main() {
     if args.len() > 1 {
         match args[1].as_str() {
             "sais" => time_sais(args),
+            "skew" => time_skew(args),
+            "naive-sa" => time_naive_sa(args),
             "otable" => time_o_table(args),
             "approx" => time_approx(args),
             "exact" => time_exact(args),
@@ -56,6 +59,52 @@ pub fn time_sais(args: Vec<String>) {
     for _ in 0..iterations {
         let time = Instant::now();
         let sa = suffix_array_induced_sort(&genome);
+        total += time.elapsed().as_nanos();
+
+        if output {
+            println!("Suffix array has length {}", sa.len());
+        }
+    }
+
+    println!("{}", total / iterations);
+}
+
+pub fn time_skew(args: Vec<String>) {
+    let genome_file_name = &args[2];
+    let iterations: u128 = args[3].parse().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
+    let genome = read_and_remap_genome(genome_file_name);
+
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let sa = skew(&genome);
+        total += time.elapsed().as_nanos();
+
+        if output {
+            println!("Suffix array has length {}", sa.len());
+        }
+    }
+
+    println!("{}", total / iterations);
+}
+
+pub fn time_naive_sa(args: Vec<String>) {
+    let genome_file_name = &args[2];
+    let iterations: u128 = args[3].parse().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
+    let genome = read_and_remap_genome(genome_file_name);
+
+    let mut total = 0;
+    for _ in 0..iterations {
+        let time = Instant::now();
+        let sa = construct_suffix_array_naive(&genome);
         total += time.elapsed().as_nanos();
 
         if output {
