@@ -20,8 +20,7 @@ pub fn bwt_search(query: &[u8], o_table: &OTable, c_table: &[usize]) -> (usize, 
 }
 
 /// Exact search based on binary search through the suffix array
-#[allow(dead_code)]
-pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]) -> usize {
+pub fn exact_binary_search(reference: &[u8], suffix_array: &[usize], query: &[u8]) -> usize {
     let mut low = 0;
     let mut high = suffix_array.len();
 
@@ -33,7 +32,7 @@ pub fn naive_exact_search(reference: &[u8], suffix_array: &[usize], query: &[u8]
 
         let cmp_string = &reference[i..j];
 
-        match query.cmp(&cmp_string) {
+        match query.cmp(cmp_string) {
             Ordering::Less => high = mid - 1,
             Ordering::Greater => low = mid + 1,
             Ordering::Equal => return mid,

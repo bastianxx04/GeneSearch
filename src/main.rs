@@ -1,5 +1,3 @@
-extern crate bincode;
-
 mod approx_search;
 mod exact_search;
 mod o_table;
@@ -25,6 +23,8 @@ use table_gen::generate_c_table;
 use types::*;
 use util::*;
 
+use crate::exact_search::exact_binary_search;
+
 const ALPHABET: [char; 5] = ['$', 'A', 'C', 'G', 'T'];
 const HG38_1000: &str = "hg38-1000";
 
@@ -38,7 +38,8 @@ fn main() {
             "naive-sa" => time_naive_sa(args),
             "otable" => time_o_table(args),
             "approx" => time_approx(args),
-            "exact" => time_exact(args),
+            "exact-bwt" => time_exact_bwt(args),
+            "exact-binary" => time_exact_binary(args),
             _ => println!("Wut"),
         }
     } else {
@@ -204,7 +205,7 @@ pub fn time_approx(args: Vec<String>) {
     println!("{}", total / (iterations * reads.len() as u128));
 }
 
-pub fn time_exact(args: Vec<String>) {
+pub fn time_exact_bwt(args: Vec<String>) {
     let genome_file_name = &args[2];
     let reads_file_name = &args[3];
     let iterations = args[4].parse::<u128>().unwrap();
@@ -225,6 +226,35 @@ pub fn time_exact(args: Vec<String>) {
         for _ in 0..iterations {
             let time = Instant::now();
             let result = bwt_search(read, &o_table, &c_table);
+            total += time.elapsed().as_nanos();
+
+            if output {
+                println!("{:?}", result);
+            }
+        }
+    }
+
+    println!("{}", total / iterations);
+}
+
+pub fn time_exact_binary(args: Vec<String>) {
+    let genome_file_name = &args[2];
+    let reads_file_name = &args[3];
+    let iterations = args[4].parse::<u128>().unwrap();
+    let output = args
+        .iter()
+        .find(|s| *s == &"--no-output".to_owned())
+        .is_none();
+
+    let genome = read_and_remap_genome(genome_file_name);
+    let suffix_array = get_sa(genome_file_name, &genome, false);
+
+    let mut total = 0;
+    let reads = read_and_remap_reads(reads_file_name).unwrap();
+    for read in &reads {
+        for _ in 0..iterations {
+            let time = Instant::now();
+            let result = exact_binary_search(&genome, &suffix_array, read);
             total += time.elapsed().as_nanos();
 
             if output {

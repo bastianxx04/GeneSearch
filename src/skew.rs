@@ -39,9 +39,7 @@ fn skew_rec(reference: &[u8], alphabet_size: usize) -> SuffixArray {
         sa3.insert(0, reference.len() - 1);
     }
     sa3 = bucket_sort(reference, alphabet_size, &sa3, 0);
-    let result = merge(reference, sa12, sa3);
-
-    result
+    merge(reference, sa12, sa3)
 }
 
 fn safe_idx(reference: &[u8], i: usize) -> usize {
@@ -70,7 +68,7 @@ fn cumsum(counts: Vec<usize>) -> Vec<usize> {
     res
 }
 
-fn bucket_sort<'a>(reference: &[u8], asize: usize, idx: &'a [usize], offset: usize) -> Vec<usize> {
+fn bucket_sort(reference: &[u8], asize: usize, idx: &[usize], offset: usize) -> Vec<usize> {
     let mut sort_symbs = vec![];
     for i in idx {
         sort_symbs.push(safe_idx(reference, i + offset));
@@ -83,32 +81,31 @@ fn bucket_sort<'a>(reference: &[u8], asize: usize, idx: &'a [usize], offset: usi
         out[buckets[bucket]] = *i;
         buckets[bucket] += 1;
     }
-    return out.clone();
+    out
 }
 
-fn radix3<'a>(reference: &[u8], asize: usize, idx: &'a [usize]) -> Vec<usize> {
+fn radix3(reference: &[u8], asize: usize, idx: &[usize]) -> Vec<usize> {
     let idx = bucket_sort(reference, asize, idx, 2);
     let idx = bucket_sort(reference, asize, &idx, 1);
-    return bucket_sort(reference, asize, &idx, 0);
+    bucket_sort(reference, asize, &idx, 0)
 }
 
 fn triplet(reference: &[u8], i: usize) -> Triplet {
-    return (
+    (
         safe_idx(reference, i),
         safe_idx(reference, i + 1),
         safe_idx(reference, i + 2),
-    );
+    )
 }
 
 fn collect_alphabet(reference: &[u8], idx: &[usize]) -> TripletMap {
     let mut alpha: TripletMap = HashMap::new();
     for i in idx.iter() {
         let trip = triplet(reference, *i);
-        if !alpha.contains_key(&trip) {
-            alpha.insert(trip, alpha.len() + 2);
-        }
+        let val = alpha.len() + 2;
+        alpha.entry(trip).or_insert(val);
     }
-    return alpha;
+    alpha
 }
 
 fn less(reference: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
@@ -128,8 +125,8 @@ fn less(reference: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bo
 
 fn merge(reference: &[u8], sa12: Vec<usize>, sa3: Vec<usize>) -> Vec<usize> {
     let mut isa = HashMap::new();
-    for i in 0..sa12.len() {
-        isa.insert(sa12[i], i);
+    for (i, &v) in sa12.iter().enumerate() {
+        isa.insert(v, i);
     }
     let mut sa = vec![];
 
@@ -147,7 +144,7 @@ fn merge(reference: &[u8], sa12: Vec<usize>, sa3: Vec<usize>) -> Vec<usize> {
     }
     sa.extend_from_slice(&sa12[i..]);
     sa.extend_from_slice(&sa3[j..]);
-    return sa;
+    sa
 }
 
 fn build_u(reference: &[u8], alpha: &TripletMap) -> Vec<u8> {
@@ -163,14 +160,14 @@ fn build_u(reference: &[u8], alpha: &TripletMap) -> Vec<u8> {
         acc.push(alpha[&triplet(reference, i)] as u8);
         i += 3;
     }
-    return acc;
+    acc
 }
 
 fn u_idx(i: usize, m: usize) -> usize {
     if i < m {
-        return 1 + 3 * i;
+        1 + 3 * i
     } else {
-        return 2 + 3 * (i - m - 1);
+        2 + 3 * (i - m - 1)
     }
 }
 #[cfg(test)]
