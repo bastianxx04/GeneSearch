@@ -17,7 +17,9 @@ fn skew_rec(reference: &[u8], alphabet_size: usize) -> SuffixArray {
     let mut sa12 = (0..reference.len())
         .filter(|&x| x % 3 != 0)
         .collect::<Vec<usize>>();
-    sa12 = radix3(reference, alphabet_size, &sa12);
+
+    radix3(reference, alphabet_size, &mut sa12);
+
     let new_alpha = collect_alphabet(reference, &sa12);
 
     if new_alpha.len() < sa12.len() {
@@ -38,19 +40,45 @@ fn skew_rec(reference: &[u8], alphabet_size: usize) -> SuffixArray {
     if reference.len() % 3 == 1 {
         sa3.insert(0, reference.len() - 1);
     }
-    sa3 = bucket_sort(reference, alphabet_size, &sa3, 0);
+    radix_sort(reference, alphabet_size, &mut sa3, 0);
     merge(reference, sa12, sa3)
 }
 
-fn safe_idx(reference: &[u8], i: usize) -> usize {
-    if i >= reference.len() {
-        0
-    } else {
-        reference[i] as usize
-    }
+fn radix3(reference: &[u8], asize: usize, idx: &mut [usize]) {
+    radix_sort(reference, asize, idx, 2);
+    radix_sort(reference, asize, idx, 1);
+    radix_sort(reference, asize, idx, 0);
 }
 
-fn symbcount(reference: Vec<usize>, asize: usize) -> Vec<usize> {
+fn radix_sort(reference: &[u8], asize: usize, idx: &mut [usize], offset: usize) {
+    // Get the list of symbols to sort by
+    let sort_symbols: Vec<usize> = idx
+        .iter()
+        .map(|i| safe_idx(reference, i + offset))
+        .collect();
+
+    // Get the bucket sizes
+    let counts = count_symbols(sort_symbols, asize);
+    let mut bucket_heads = cumulative_sums(counts);
+
+    // Sort into a new array
+    let mut sorted = vec![0; idx.len()];
+    for i in idx.iter() {
+        let bucket = safe_idx(reference, *i + offset);
+        sorted[bucket_heads[bucket]] = *i;
+        bucket_heads[bucket] += 1;
+    }
+
+    // Copy into input array
+    idx.copy_from_slice(&sorted);
+}
+
+/// Return 0 if index is out of bounds
+fn safe_idx(reference: &[u8], i: usize) -> usize {
+    *(reference.get(i).unwrap_or(&0)) as usize
+}
+
+fn count_symbols(reference: Vec<usize>, asize: usize) -> Vec<usize> {
     let mut counts = vec![0; asize];
     for c in reference.iter() {
         counts[*c] += 1;
@@ -58,7 +86,7 @@ fn symbcount(reference: Vec<usize>, asize: usize) -> Vec<usize> {
     counts
 }
 
-fn cumsum(counts: Vec<usize>) -> Vec<usize> {
+fn cumulative_sums(counts: Vec<usize>) -> Vec<usize> {
     let mut res = vec![0; counts.len()];
     let mut acc = 0;
     for (i, k) in counts.iter().enumerate() {
@@ -66,28 +94,6 @@ fn cumsum(counts: Vec<usize>) -> Vec<usize> {
         acc += k;
     }
     res
-}
-
-fn bucket_sort(reference: &[u8], asize: usize, idx: &[usize], offset: usize) -> Vec<usize> {
-    let mut sort_symbs = vec![];
-    for i in idx {
-        sort_symbs.push(safe_idx(reference, i + offset));
-    }
-    let counts = symbcount(sort_symbs, asize);
-    let mut buckets = cumsum(counts);
-    let mut out = vec![0; idx.len()];
-    for i in idx.iter() {
-        let bucket = safe_idx(reference, i + offset);
-        out[buckets[bucket]] = *i;
-        buckets[bucket] += 1;
-    }
-    out
-}
-
-fn radix3(reference: &[u8], asize: usize, idx: &[usize]) -> Vec<usize> {
-    let idx = bucket_sort(reference, asize, idx, 2);
-    let idx = bucket_sort(reference, asize, &idx, 1);
-    bucket_sort(reference, asize, &idx, 0)
 }
 
 fn triplet(reference: &[u8], i: usize) -> Triplet {
@@ -106,45 +112,6 @@ fn collect_alphabet(reference: &[u8], idx: &[usize]) -> TripletMap {
         alpha.entry(trip).or_insert(val);
     }
     alpha
-}
-
-fn less(reference: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
-    let a = safe_idx(reference, i);
-    let b = safe_idx(reference, j);
-    if a < b {
-        return true;
-    }
-    if a > b {
-        return false;
-    }
-    if i % 3 != 0 && j % 3 != 0 {
-        return isa[&i] < isa[&j];
-    }
-    less(reference, i + 1, j + 1, isa)
-}
-
-fn merge(reference: &[u8], sa12: Vec<usize>, sa3: Vec<usize>) -> Vec<usize> {
-    let mut isa = HashMap::new();
-    for (i, &v) in sa12.iter().enumerate() {
-        isa.insert(v, i);
-    }
-    let mut sa = vec![];
-
-    let mut i = 0;
-    let mut j = 0;
-
-    while i < sa12.len() && j < sa3.len() {
-        if less(reference, sa12[i], sa3[j], &isa) {
-            sa.push(sa12[i]);
-            i += 1;
-        } else {
-            sa.push(sa3[j]);
-            j += 1;
-        }
-    }
-    sa.extend_from_slice(&sa12[i..]);
-    sa.extend_from_slice(&sa3[j..]);
-    sa
 }
 
 fn build_u(reference: &[u8], alpha: &TripletMap) -> Vec<u8> {
@@ -170,6 +137,46 @@ fn u_idx(i: usize, m: usize) -> usize {
         2 + 3 * (i - m - 1)
     }
 }
+
+fn merge(reference: &[u8], sa12: Vec<usize>, sa3: Vec<usize>) -> Vec<usize> {
+    let mut isa = HashMap::new();
+    for (i, &v) in sa12.iter().enumerate() {
+        isa.insert(v, i);
+    }
+    let mut sa = vec![];
+
+    let mut i = 0;
+    let mut j = 0;
+
+    while i < sa12.len() && j < sa3.len() {
+        if is_less(reference, sa12[i], sa3[j], &isa) {
+            sa.push(sa12[i]);
+            i += 1;
+        } else {
+            sa.push(sa3[j]);
+            j += 1;
+        }
+    }
+    sa.extend_from_slice(&sa12[i..]);
+    sa.extend_from_slice(&sa3[j..]);
+    sa
+}
+
+fn is_less(reference: &[u8], i: usize, j: usize, isa: &HashMap<usize, usize>) -> bool {
+    let a = safe_idx(reference, i);
+    let b = safe_idx(reference, j);
+    if a < b {
+        return true;
+    }
+    if a > b {
+        return false;
+    }
+    if i % 3 != 0 && j % 3 != 0 {
+        return isa[&i] < isa[&j];
+    }
+    is_less(reference, i + 1, j + 1, isa)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
