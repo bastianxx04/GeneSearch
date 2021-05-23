@@ -116,17 +116,15 @@ fn collect_alphabet(reference: &[u8], idx: &[usize]) -> TripletMap {
 
 fn build_u(reference: &[u8], alpha: &TripletMap) -> Vec<u8> {
     let mut acc = Vec::new();
-    let mut i = 1;
-    while i < reference.len() {
-        acc.push(alpha[&triplet(reference, i)] as u8);
-        i += 3;
+
+    for i in (1..reference.len()).step_by(3) {
+        acc.push(alpha[&triplet(reference, i)] as u8)
     }
     acc.push(1);
-    i = 2;
-    while i < reference.len() {
+    for i in (2..reference.len()).step_by(3) {
         acc.push(alpha[&triplet(reference, i)] as u8);
-        i += 3;
     }
+
     acc
 }
 
