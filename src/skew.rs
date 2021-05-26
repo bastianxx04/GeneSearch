@@ -1,9 +1,4 @@
-//! Implementation of the skew/DC3 algorithm.
-//!
-//! Implemented using https://github.com/mailund/pystr as a reference.
-
 use std::collections::HashMap;
-
 use crate::types::SuffixArray;
 
 type Triplet = (usize, usize, usize);
