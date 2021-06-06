@@ -35,7 +35,7 @@ To run the code directly use:
 `cargo run`
 
 To build an optimized executable use:
-`cargo build --release` with `--quiet` an optional flag to supress compiler output.
+`cargo build --release` with `--quiet` an optional flag to suppress compiler output.
 
 ### Console arguments
 
@@ -57,6 +57,14 @@ For type, the options "skew", "exact-bwt", and "exact-binary" are only available
 The order of the arguments is as follows. If an argument is not relevant to the operation being executed it can simply be omitted from the list.
 `{type} {genome} {reads} {iterations} {spacing} {edits} --no-output`
 The `--no-output` flag is optional, and if set will only print the runtime of the operation.
+
+## Examples
+Running approximate search with genome file HG38-1000000.fa and reads from file reads-100-10-0.fq for one iteration with one edit allowed on branch otable-noskips. This prints the result to the console.
+`cargo run approx HG38-1000000 reads-100-10-0 1 1`
+
+Constructing an O-table from HG38-1000000.fa 5 times with skips set to 2, and output the average runtime for constructing the O-table in nanoseconds. On mainbranch .
+`cargo build --release --quiet` and
+`target/release/gene_search.exe otable HG38-1000000 5 2 --no-output`
 
 [//]: # (These are reference links used in the body of this note)
    [rust-install]: <https://www.rust-lang.org/learn/get-started>
