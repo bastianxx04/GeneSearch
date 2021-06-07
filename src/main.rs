@@ -92,6 +92,7 @@ pub fn time_approx(args: Vec<String>) {
     let genome_file_name = &args[2];
     let reads_file_name = &args[3];
     let iterations = args[4].parse::<u128>().unwrap();
+    let edits: usize = args[5].parse().unwrap();
     let output = args
         .iter()
         .find(|s| *s == &"--no-output".to_owned())
@@ -126,7 +127,7 @@ pub fn time_approx(args: Vec<String>) {
             o_table: &o_table,
             c_table: &c_table,
             rev_o_table: &reverse_o_table,
-            edits: 1,
+            edits,
         };
 
         for _ in 0..iterations {
